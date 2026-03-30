@@ -1,0 +1,136 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* ═══════════════════════════════════════════════
+   深色模式全局覆盖
+   由于各组件使用硬编码 Tailwind 颜色类（bg-white、text-gray-700 等），
+   在此通过 .dark 上下文选择器统一覆盖，确保深色主题全局生效。
+═══════════════════════════════════════════════ */
+
+/* —— 布局背景 —— */
+html.dark,
+html.dark body {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  color-scheme: dark;
+}
+
+/* 主容器背景 */
+html.dark .bg-gray-50 { background-color: #0f172a !important; }
+html.dark .bg-gray-100 { background-color: #1e293b !important; }
+html.dark .bg-gray-200 { background-color: #334155 !important; }
+
+/* 白色卡片/面板 → 深色卡片 */
+html.dark .bg-white { background-color: #1e293b !important; }
+
+/* —— 文字颜色 —— */
+html.dark .text-gray-900 { color: #f1f5f9 !important; }
+html.dark .text-gray-800 { color: #e2e8f0 !important; }
+html.dark .text-gray-700 { color: #cbd5e1 !important; }
+html.dark .text-gray-600 { color: #94a3b8 !important; }
+html.dark .text-gray-500 { color: #64748b !important; }
+html.dark .text-gray-400 { color: #475569 !important; }
+html.dark .text-gray-300 { color: #374151 !important; }
+
+/* —— 边框颜色 —— */
+html.dark .border-gray-100 { border-color: #1e293b !important; }
+html.dark .border-gray-200 { border-color: #334155 !important; }
+html.dark .border-gray-300 { border-color: #475569 !important; }
+
+/* —— 悬停状态 —— */
+html.dark .hover\:bg-gray-50:hover { background-color: #263350 !important; }
+html.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+html.dark .hover\:bg-gray-200:hover { background-color: #475569 !important; }
+
+/* —— 输入框 / 表单元素 —— */
+html.dark input:not([class*="bg-"]),
+html.dark textarea:not([class*="bg-"]) {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+html.dark input.bg-white,
+html.dark textarea.bg-white {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* 搜索框、时间选择器等 border-gray-200 输入 */
+html.dark input[class*="border-gray"] {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+/* placeholder */
+html.dark ::placeholder { color: #64748b; }
+
+/* —— 聊天气泡 / 消息区域 —— */
+html.dark .bg-violet-50 { background-color: #1e1b4b !important; }
+html.dark .bg-indigo-50 { background-color: #1e1b4b !important; }
+html.dark .bg-blue-50   { background-color: #0f2240 !important; }
+html.dark .bg-green-50  { background-color: #0d2b1e !important; }
+html.dark .bg-orange-50 { background-color: #2d1b08 !important; }
+html.dark .bg-red-50    { background-color: #2d0f0f !important; }
+html.dark .bg-yellow-50 { background-color: #2d2008 !important; }
+html.dark .bg-purple-50 { background-color: #1e0f3d !important; }
+
+/* 深色模式下保持亮色文字 */
+html.dark .text-violet-600 { color: #a78bfa !important; }
+html.dark .text-violet-700 { color: #8b5cf6 !important; }
+html.dark .text-indigo-600 { color: #818cf8 !important; }
+html.dark .text-blue-600   { color: #60a5fa !important; }
+html.dark .text-blue-700   { color: #3b82f6 !important; }
+html.dark .text-green-600  { color: #34d399 !important; }
+html.dark .text-green-700  { color: #10b981 !important; }
+html.dark .text-orange-600 { color: #fb923c !important; }
+html.dark .text-red-600    { color: #f87171 !important; }
+html.dark .text-red-500    { color: #ef4444 !important; }
+html.dark .text-yellow-600 { color: #fbbf24 !important; }
+
+/* —— Header / 顶部导航栏 —— */
+html.dark header.bg-white,
+html.dark header[class*="bg-white"] {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* —— 弹窗 Modal —— */
+html.dark .bg-white.rounded-2xl,
+html.dark [class*="rounded"][class*="bg-white"] {
+  background-color: #1e293b !important;
+}
+html.dark .border-b { border-color: #334155 !important; }
+
+/* 弹窗标题和关闭按钮 */
+html.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+
+/* —— 徽章与标签 —— */
+html.dark .bg-gray-50.text-gray-500,
+html.dark .bg-gray-100.text-gray-500 {
+  background-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+/* —— 进度条轨道 —— */
+html.dark .bg-gray-100.rounded-full { background-color: #334155 !important; }
+html.dark .bg-gray-200.rounded-full { background-color: #334155 !important; }
+
+/* —— FAQ details 元素 —— */
+html.dark details.bg-gray-50 { background-color: #1e293b !important; }
+html.dark details.bg-gray-50 summary:hover { background-color: #334155 !important; }
+
+/* —— 选中状态保持高亮 —— */
+html.dark .border-violet-400 { border-color: #7c3aed !important; }
+html.dark .bg-violet-500 { background-color: #7c3aed !important; }
+html.dark .hover\:bg-violet-600:hover { background-color: #6d28d9 !important; }
+
+/* —— 侧边栏/抽屉 —— */
+html.dark aside.bg-white { background-color: #1e293b !important; }
+
+/* —— 滚动条 —— */
+html.dark ::-webkit-scrollbar { width: 6px; height: 6px; }
+html.dark ::-webkit-scrollbar-track { background: #0f172a; }
+html.dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
