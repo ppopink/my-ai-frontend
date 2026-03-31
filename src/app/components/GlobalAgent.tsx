@@ -31,7 +31,7 @@ export function GlobalAgent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          messages: newMessages.map(m => ({ role: m.role, content: m.content }))
+          messages: newMessages.slice(-6).map(m => ({ role: m.role, content: m.content }))
         })
       });
 
