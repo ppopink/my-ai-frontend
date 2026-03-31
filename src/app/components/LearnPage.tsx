@@ -128,14 +128,13 @@ export function LearnPage() {
         setEliminatedOptions(prev => new Set([...prev, selectedOption]));
       }
 
-      // Tutor auto-opens with explanation of why wrong
-      const tutorReply = generateTutorResponse(currentQ, '', true, userAnswer, newAttempts);
-      setTutorMessages(prev => [...prev, {
-        role: 'assistant',
-        content: tutorReply,
-        timestamp: new Date().toISOString(),
-      }]);
-      if (!tutorOpen) setTutorOpen(true);
+      // ==========================================
+      // 🚨 核心爆发点：答错时，触发真实的 AI 导师进行针对性辅导！
+      // ==========================================
+      const actionContext = `用户第 ${newAttempts} 次答错了。他刚刚选择了答案：【${userAnswer}】。请帮他分析为什么这个选项是错的，并用启发式的方式给出思考方向。`;
+      
+      // 第三个参数传 false，代表不需要在界面上显示“我选错了...”这句话，让 AI 直接开口
+      streamAITutorResponse(actionContext, "我选错了，能给我点提示吗？", false);
     }
   };
 
@@ -156,20 +155,81 @@ export function LearnPage() {
     }
   };
 
+  // ==========================================
+  // 🚨 新增：真实 AI 导师流式请求引擎
+  // ==========================================
+  const streamAITutorResponse = async (userAction: string, userMessage: string, showUserBubble: boolean = true) => {
+    // 1. 如果需要，先把用户的话显示到气泡里
+    if (showUserBubble && userMessage) {
+      setTutorMessages(prev => [...prev, { role: 'user', content: userMessage, timestamp: new Date().toISOString() }]);
+    }
+    
+    setTutorTyping(true);
+    if (!tutorOpen) setTutorOpen(true); // 如果侧边栏没开，AI 讲话时自动弹出来！
+
+    try {
+      // 2. 核心：把左边的题目自动抓取过来，组装成上下文！
+      const qContext = currentQ ? `题目：${currentQ.question}\n选项：${currentQ.options?.map((o: any) => `${o.label}: ${o.text}`).join(' | ')}` : "暂无题目";
+      
+      // 🚨 新增：从本地缓存读取用户设定的风格（如果没有，默认给个鼓励型）
+      const prefs = JSON.parse(localStorage.getItem('userPreferences') || '{}');
+      const currentStyle = prefs.aiStyle || "鼓励引导型"; 
+
+      const response = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/study/tutor-chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question_context: qContext,
+          user_action: userAction,
+          message: userMessage,
+          tutor_style: currentStyle // 🚨 把风格传给后端！
+        })
+      });
+
+      if (!response.ok) throw new Error('AI 导师连接失败');
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error("No reader available");
+      const decoder = new TextDecoder('utf-8');
+      
+      setTutorMessages(prev => [...prev, { role: 'assistant', content: '', timestamp: new Date().toISOString() }]);
+      setTutorTyping(false);
+
+      let accumulatedContent = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const textLines = decoder.decode(value, { stream: true }).split('\n').filter(l => l.trim() !== '');
+        for (const line of textLines) {
+          if (line.startsWith('data: ')) {
+            accumulatedContent += line.substring(6);
+            setTutorMessages(prev => {
+              const newMsgs = [...prev];
+              const last = newMsgs[newMsgs.length - 1];
+              if (last && last.role === 'assistant') {
+                last.content = accumulatedContent;
+              }
+              return newMsgs;
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      setTutorTyping(false);
+    }
+  };
+
+  // 替换原有的 handleTutorSend
   const handleTutorSend = () => {
     if (!tutorInput.trim() || tutorTyping) return;
-    const msg: ChatMessage = { role: 'user', content: tutorInput, timestamp: new Date().toISOString() };
-    setTutorMessages(prev => [...prev, msg]);
-    const inputText = tutorInput;
-    setTutorInput('');
-    setTutorTyping(true);
-
-    setTimeout(() => {
-      const reply = generateTutorResponse(currentQ, inputText, false);
-      setTutorMessages(prev => [...prev, { role: 'assistant', content: reply, timestamp: new Date().toISOString() }]);
-      setTutorTyping(false);
-    }, 800);
+    const text = tutorInput.trim();
+    setTutorInput(''); // 清空输入框
+    // 呼叫我们刚才写的引擎！
+    streamAITutorResponse("用户在右侧聊天框主动提问", text, true);
   };
+
+
 
   const nextSection = sectionFromChapters
     ? (sectionIndex < allSections.length - 1 ? allSections[sectionIndex + 1] : undefined)

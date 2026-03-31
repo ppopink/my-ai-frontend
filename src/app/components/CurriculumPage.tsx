@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Circle, Play, Lock, ArrowLeft, StickyNote, ChevronDown, BookOpen } from 'lucide-react';
@@ -9,23 +9,58 @@ export function CurriculumPage() {
   const navigate = useNavigate();
   const course = COURSES.find(c => c.id === courseId);
 
-  const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
-  const curriculum = curricula[courseId!];
-
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
+  const [customSyllabus, setCustomSyllabus] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!curriculum) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <p className="text-gray-500 mb-4">你还没有开始这门课程</p>
-        <button onClick={() => navigate(`/interview/${courseId}`)} className="px-6 py-2 bg-violet-500 text-white rounded-lg">
-          开始采访
-        </button>
-      </div>
-    );
+  // 1. 数据拉取 Hook
+  useEffect(() => {
+    const fetchSyllabus = async () => {
+      try {
+        const response = await fetch(`https://personalizedlearningassistant-backend.onrender.com/api/curriculum/user_123/${courseId}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.status === 'success') {
+            setCustomSyllabus(result.data);
+          }
+        }
+      } catch (error) {
+        console.error("获取专属大纲失败:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSyllabus();
+  }, [courseId]);
+
+  // 2. 基础数据与合并逻辑 (非 Hook)
+  const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
+  let curriculum = curricula[courseId!];
+
+  if (customSyllabus) {
+    const mappedChapters: CurriculumChapter[] = customSyllabus.chapters.map((ch: any, chIdx: number) => ({
+      id: `custom-ch-${chIdx}`,
+      title: ch.chapter_title,
+      description: "AI 为你量身定制的章节",
+      sections: ch.sections.map((secName: string, secIdx: number) => ({
+        id: `custom-sec-${chIdx}-${secIdx}`,
+        title: secName,
+        description: "",
+        progress: 0,
+        completed: false,
+        understanding: 'none',
+        content: ''
+      }))
+    }));
+
+    if (!curriculum) {
+      curriculum = { courseId: courseId!, chapters: mappedChapters } as Curriculum;
+    } else {
+      curriculum = { ...curriculum, chapters: mappedChapters };
+    }
   }
 
-  const chapters = curriculum.chapters || [];
+  const chapters = curriculum?.chapters || [];
   const allSections = chapters.flatMap(ch => ch.sections);
   const totalSections = allSections.length;
   const completedSections = allSections.filter(s => s.completed).length;
@@ -33,6 +68,21 @@ export function CurriculumPage() {
     ? Math.round(allSections.reduce((s, sec) => s + sec.progress, 0) / totalSections)
     : 0;
 
+  // 3. 访问控制 Hook (依然要在 return 之前调用)
+  const sectionAccessMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    let prevAccessible = true;
+    for (const ch of chapters) {
+      for (const sec of ch.sections) {
+        const accessible = prevAccessible || sec.progress > 0;
+        map.set(sec.id, accessible);
+        prevAccessible = sec.progress > 0 || sec.completed;
+      }
+    }
+    return map;
+  }, [chapters]);
+
+  // 工具函数搬移到这里 (或者保持原位，只要不在 Hook 之后 return 即可)
   const toggleChapter = (chId: string) => {
     setExpandedChapters(prev => {
       const next = new Set(prev);
@@ -72,19 +122,28 @@ export function CurriculumPage() {
     return 'not-started';
   };
 
-  // Flatten all sections to determine accessibility (sequential unlocking)
-  const sectionAccessMap = useMemo(() => {
-    const map = new Map<string, boolean>();
-    let prevAccessible = true;
-    for (const ch of chapters) {
-      for (const sec of ch.sections) {
-        const accessible = prevAccessible || sec.progress > 0;
-        map.set(sec.id, accessible);
-        prevAccessible = sec.progress > 0 || sec.completed;
-      }
-    }
-    return map;
-  }, [chapters]);
+  // ==========================================
+  // 4. 终于安全了！这里可以放心地进行流程控制
+  // ==========================================
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-32 text-center">
+        <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-500 animate-pulse">正在从云端获取你的专属学习计划...</p>
+      </div>
+    );
+  }
+
+  if (!curriculum || chapters.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <p className="text-gray-500 mb-4">你还没有开始这门课程</p>
+        <button onClick={() => navigate(`/interview/${courseId}`)} className="px-6 py-2 bg-violet-500 text-white rounded-lg">
+          开始采访
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 pb-24">

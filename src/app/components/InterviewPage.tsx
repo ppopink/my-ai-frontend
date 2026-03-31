@@ -38,43 +38,118 @@ export function InterviewPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const handleSend = () => {
+  const [isPlanLoading, setIsPlanLoading] = useState(false);
+
+  const handleGeneratePlan = async () => {
+    if (isPlanLoading) return;
+    setIsPlanLoading(true);
+    
+    try {
+      // Consolidate answers for the AI
+      const userBackground = answers.map((ans, i) => `Q: ${questions[i]}\nA: ${ans}`).join('\n\n');
+      
+      const response = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/onboarding/generate-syllabus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          course_id: courseId,
+          course_name: course?.name || courseId,
+          user_id: "user_123",
+          user_background: userBackground
+        })
+      });
+
+      if (!response.ok) throw new Error("大纲生成请求失败");
+
+      const result = await response.json();
+      
+      if (result.status === 'success' && result.data) {
+        // Save the AI-generated syllabus to localStorage for CurriculumPage to consume
+        localStorage.setItem('customSyllabus', JSON.stringify(result.data));
+        // Also save the summary to the user profile in store
+        const profiles = loadData<Record<string, UserProfile>>(STORAGE_KEYS.profiles, {});
+        profiles[courseId!] = { 
+          courseId: courseId!, 
+          answers, 
+          summary: "AI 已为您量身定制了专属学习路径。" 
+        };
+        saveData(STORAGE_KEYS.profiles, profiles);
+        
+        navigate(`/curriculum/${courseId}`);
+      } else {
+        throw new Error("返回数据格式不正确");
+      }
+    } catch (error) {
+      console.error("大纲生成出错:", error);
+      alert("生成个性化计划失败，请检查后端服务是否正常运行。");
+    } finally {
+      setIsPlanLoading(false);
+    }
+  };
+
+  const handleSend = async () => {
     if (!input.trim() || generating || isTyping) return;
 
-    const userMsg: ChatMessage = { role: 'user', content: input, timestamp: new Date().toISOString() };
+    const userText = input.trim();
+    const userMsg: ChatMessage = { role: 'user', content: userText, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, userMsg]);
-    const newAnswers = [...answers, input];
+    const newAnswers = [...answers, userText];
     setAnswers(newAnswers);
     setInput('');
 
     const nextQ = currentQ + 1;
 
-    if (nextQ < questions.length) {
-      const transitions = [
-        '好的，了解了！👍',
-        '明白啦～',
-        '不错不错，这对我很有帮助 😊',
-        '嗯嗯，记下了！',
-        '很好，谢谢你的分享！',
-        '收到 ✅ 继续聊~',
-        'OK，了解你的情况了！',
-        '好嘞，这个信息很重要 📝',
-      ];
-      const transition = transitions[Math.floor(Math.random() * transitions.length)];
-      setIsTyping(true);
-      setTimeout(() => {
+    try {
+      if (nextQ < questions.length) {
+        setIsTyping(true);
+        
+        // Use Fetch Reader for transition feedback
+        const response = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/agent/chat/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: userText,
+            context: {
+              type: 'interview_transition',
+              courseId,
+              nextQuestion: questions[nextQ],
+              answerHistory: newAnswers
+            }
+          })
+        });
+
+        if (!response.ok) throw new Error('Fetch failed');
+
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error('No reader available');
+        const decoder = new TextDecoder('utf-8');
         setIsTyping(false);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: `${transition}\n\n${questions[nextQ]}`,
-          timestamp: new Date().toISOString(),
-        }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: '', timestamp: new Date().toISOString() }]);
+
+        let accumulatedContent = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunkText = decoder.decode(value, { stream: true });
+          const lines = chunkText.split('\n').filter(l => l.trim() !== '');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              accumulatedContent += line.substring(6);
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last && last.role === 'assistant') {
+                  return [...prev.slice(0, -1), { ...last, content: accumulatedContent }];
+                }
+                return prev;
+              });
+            }
+          }
+        }
         setCurrentQ(nextQ);
-      }, 1200);
-    } else {
-      setIsTyping(true);
-      setGenerating(true);
-      setTimeout(() => {
+      } else {
+        setIsTyping(true);
+        setGenerating(true);
+
         const items = generateCurriculum(courseId!, newAnswers);
         const chapters = generateChapters(courseId!, newAnswers);
         const curriculum: Curriculum = { courseId: courseId!, items, chapters };
@@ -87,14 +162,63 @@ export function InterviewPage() {
         profiles[courseId!] = { courseId: courseId!, answers: newAnswers, summary: '' };
         saveData(STORAGE_KEYS.profiles, profiles);
 
+        // Fetch reader for the final summary
+        const response2 = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/agent/chat/stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: "总结一下我的采访，告诉我已经生成了学习计划。",
+            context: {
+              type: 'interview_summary',
+              courseId,
+              curriculumOverview: {
+                chapterCount: chapters.length,
+                totalSections: chapters.reduce((s, c) => s + c.sections.length, 0)
+              }
+            }
+          })
+        });
+
+        if (!response2.ok) throw new Error('Fetch failed');
+
+        const reader2 = response2.body?.getReader();
+        if (!reader2) throw new Error('No reader available');
+        const decoder2 = new TextDecoder('utf-8');
         setIsTyping(false);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: `太好了！我已经根据你的情况为你定制了一份包含 ${chapters.length} 章、${chapters.reduce((s, c) => s + c.sections.length, 0)} 节的学习计划 🎯\n\n学习计划已经准备好了，包括从基础到进阶的完整路径。每个章节都会有我陪你学习，随时解答问题。\n\n点击下方按钮开始你的学习之旅吧！`,
-          timestamp: new Date().toISOString(),
-        }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: '', timestamp: new Date().toISOString() }]);
+
+        let accumulatedContent2 = '';
+        while (true) {
+          const { done, value } = await reader2.read();
+          if (done) break;
+          const chunkText = decoder2.decode(value, { stream: true });
+          const lines = chunkText.split('\n').filter(l => l.trim() !== '');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              accumulatedContent2 += line.substring(6);
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                if (last && last.role === 'assistant') {
+                  return [...prev.slice(0, -1), { ...last, content: accumulatedContent2 }];
+                }
+                return prev;
+              });
+            }
+          }
+        }
         setGenerating(false);
-      }, 2500);
+      }
+    } catch (error) {
+      console.error('Error during interview stream:', error);
+      // Fallback behavior
+      setIsTyping(false);
+      setGenerating(false);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: nextQ < questions.length ? questions[nextQ] : "好的，我已经为您生成了学习计划，请点击下方按钮开始学习。",
+        timestamp: new Date().toISOString()
+      }]);
+      if (nextQ < questions.length) setCurrentQ(nextQ);
     }
   };
 
@@ -134,10 +258,20 @@ export function InterviewPage() {
         <motion.button
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          onClick={() => navigate(`/curriculum/${courseId}`)}
-          className="w-full py-3 bg-gradient-to-r from-violet-500 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-opacity"
+          onClick={handleGeneratePlan}
+          disabled={isPlanLoading}
+          className={`w-full py-3 rounded-xl text-white font-medium transition-all ${
+            isPlanLoading 
+              ? 'bg-gray-400 cursor-not-allowed opacity-70' 
+              : 'bg-gradient-to-r from-violet-500 to-indigo-600 hover:opacity-90 shadow-lg'
+          }`}
         >
-          🚀 查看我的学习计划
+          {isPlanLoading ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              正在为你疯狂定制中...
+            </span>
+          ) : '🚀 查看我的学习计划'}
         </motion.button>
       ) : (
         <div className="flex gap-2">

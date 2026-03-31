@@ -17,19 +17,76 @@ export function GlobalAgent() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, typing]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
-    const userMsg: ChatMessage = { role: 'user', content: input, timestamp: new Date().toISOString() };
+    const userText = input.trim();
+    const userMsg: ChatMessage = { role: 'user', content: userText, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setTyping(true);
 
-    setTimeout(() => {
-      const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
-      const response = generateGlobalAgentResponse(curricula, input);
-      setMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date().toISOString() }]);
+    try {
+      const response = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/agent/chat/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userText })
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch from AI agent');
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No readable stream');
+
+      const decoder = new TextDecoder('utf-8');
+      
+      // Add an initial empty assistant message
+      setMessages(prev => [...prev, { role: 'assistant', content: '', timestamp: new Date().toISOString() }]);
       setTyping(false);
-    }, 1200);
+
+      let accumulatedContent = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunkText = decoder.decode(value, { stream: true });
+        
+        // Parse SSE format (remove "data: " prefix and handle multiple lines)
+        const textLines = chunkText.split('\n').filter(line => line.trim() !== '');
+        for (const line of textLines) {
+          if (line.startsWith('data: ')) {
+            const text = line.substring(6);
+            accumulatedContent += text;
+            
+            // Update the last assistant message in the chat
+            setMessages(prev => {
+              const last = prev[prev.length - 1];
+              if (last && last.role === 'assistant') {
+                return [
+                  ...prev.slice(0, -1),
+                  { ...last, content: accumulatedContent }
+                ];
+              }
+              return prev;
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error streaming response:', error);
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last && last.role === 'assistant' && last.content === '') {
+          // Replace empty assistant message with error if something went wrong before the first chunk
+          return [
+            ...prev.slice(0, -1),
+            { role: 'assistant', content: '抱歉，我现在遇到了一些问题，请检查后端服务是否正常运行。', timestamp: new Date().toISOString() }
+          ];
+        }
+        return prev;
+      });
+      setTyping(false);
+    }
   };
 
   const enrolledCount = Object.keys(loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {})).length;
