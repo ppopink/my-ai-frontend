@@ -21,7 +21,8 @@ export function GlobalAgent() {
     if (!input.trim()) return;
     const userText = input.trim();
     const userMsg: ChatMessage = { role: 'user', content: userText, timestamp: new Date().toISOString() };
-    setMessages(prev => [...prev, userMsg]);
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     setInput('');
     setTyping(true);
 
@@ -29,7 +30,9 @@ export function GlobalAgent() {
       const response = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/agent/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userText })
+        body: JSON.stringify({ 
+          messages: newMessages.map(m => ({ role: m.role, content: m.content }))
+        })
       });
 
       if (!response.ok) throw new Error('Failed to fetch from AI agent');

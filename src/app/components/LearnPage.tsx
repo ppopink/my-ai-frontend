@@ -159,19 +159,20 @@ export function LearnPage() {
   // 🚨 新增：真实 AI 导师流式请求引擎
   // ==========================================
   const streamAITutorResponse = async (userAction: string, userMessage: string, showUserBubble: boolean = true) => {
-    // 1. 如果需要，先把用户的话显示到气泡里
+    const newMessages = showUserBubble && userMessage
+      ? [...tutorMessages, { role: 'user', content: userMessage, timestamp: new Date().toISOString() }]
+      : tutorMessages;
+
     if (showUserBubble && userMessage) {
-      setTutorMessages(prev => [...prev, { role: 'user', content: userMessage, timestamp: new Date().toISOString() }]);
+      setTutorMessages(newMessages as ChatMessage[]);
     }
     
     setTutorTyping(true);
-    if (!tutorOpen) setTutorOpen(true); // 如果侧边栏没开，AI 讲话时自动弹出来！
+    if (!tutorOpen) setTutorOpen(true); 
 
     try {
-      // 2. 核心：把左边的题目自动抓取过来，组装成上下文！
       const qContext = currentQ ? `题目：${currentQ.question}\n选项：${currentQ.options?.map((o: any) => `${o.label}: ${o.text}`).join(' | ')}` : "暂无题目";
       
-      // 🚨 新增：从本地缓存读取用户设定的风格（如果没有，默认给个鼓励型）
       const prefs = JSON.parse(localStorage.getItem('userPreferences') || '{}');
       const currentStyle = prefs.aiStyle || "鼓励引导型"; 
 
@@ -179,10 +180,10 @@ export function LearnPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
           question_context: qContext,
           user_action: userAction,
-          message: userMessage,
-          tutor_style: currentStyle // 🚨 把风格传给后端！
+          tutor_style: currentStyle 
         })
       });
 
