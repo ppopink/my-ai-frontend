@@ -1,23 +1,33 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Circle, Play, Lock, ArrowLeft, StickyNote, ChevronDown, BookOpen } from 'lucide-react';
 import { COURSES, STORAGE_KEYS, loadData, type Curriculum, type CurriculumChapter, type CurriculumSection } from '../store';
 
 export function CurriculumPage() {
   const { courseId } = useParams<{ courseId: string }>();
+  const location = useLocation();
+  const { syllabusData, isCustom: isCustomFromState, courseTitle: courseTitleFromState } = (location.state as any) || {};
   const navigate = useNavigate();
-  const course = COURSES.find(c => c.id === courseId);
+
+  const course = isCustomFromState 
+    ? { id: 'custom', name: courseTitleFromState || '自定义课程', icon: '✨', color: '#8b5cf6' }
+    : COURSES.find(c => c.id === courseId);
 
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
-  const [customSyllabus, setCustomSyllabus] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [customSyllabus, setCustomSyllabus] = useState<any>(syllabusData || null);
+  const [isLoading, setIsLoading] = useState(!syllabusData);
 
   // 1. 数据拉取 Hook
   useEffect(() => {
+    if (customSyllabus) {
+      setIsLoading(false);
+      return;
+    }
+
     const fetchSyllabus = async () => {
       try {
-        const response = await fetch(`https://personalizedlearningassistant-backend.onrender.com/api/curriculum/user_123/${courseId}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/onboarding/curriculum/${courseId}?user_id=user_123`);
         if (response.ok) {
           const result = await response.json();
           if (result.status === 'success') {
@@ -31,26 +41,33 @@ export function CurriculumPage() {
       }
     };
     fetchSyllabus();
-  }, [courseId]);
+  }, [courseId, customSyllabus]);
 
   // 2. 基础数据与合并逻辑 (非 Hook)
   const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
   let curriculum = curricula[courseId!];
 
   if (customSyllabus) {
-    const mappedChapters: CurriculumChapter[] = customSyllabus.chapters.map((ch: any, chIdx: number) => ({
+    const rawChapters = Array.isArray(customSyllabus) 
+      ? customSyllabus 
+      : (customSyllabus?.chapters || []);
+
+    const mappedChapters: CurriculumChapter[] = rawChapters.map((ch: any, chIdx: number) => ({
       id: `custom-ch-${chIdx}`,
-      title: ch.chapter_title,
-      description: "AI 为你量身定制的章节",
-      sections: ch.sections.map((secName: string, secIdx: number) => ({
-        id: `custom-sec-${chIdx}-${secIdx}`,
-        title: secName,
-        description: "",
-        progress: 0,
-        completed: false,
-        understanding: 'none',
-        content: ''
-      }))
+      title: ch.chapter_title || ch.title || "未知章节",
+      description: ch.description || "AI 为你量身定制的章节",
+      sections: (ch.sections || []).map((sec: any, secIdx: number) => {
+        const secTitle = typeof sec === 'string' ? sec : (sec.title || "未知节");
+        return {
+          id: `custom-sec-${chIdx}-${secIdx}`,
+          title: secTitle,
+          description: typeof sec === 'object' ? (sec.description || "") : "",
+          progress: 0,
+          completed: false,
+          understanding: 'none',
+          content: ''
+        };
+      })
     }));
 
     if (!curriculum) {

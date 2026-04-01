@@ -27,11 +27,14 @@ export function GlobalAgent() {
     setTyping(true);
 
     try {
-      const response = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/agent/chat/stream', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/agent/chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          messages: newMessages.slice(-6).map(m => ({ role: m.role, content: m.content }))
+          messages: newMessages.slice(-6).map(m => ({ role: m.role, content: m.content })),
+          username: "user_123",
+          current_question: null,
+          persona: "全能研习助手"
         })
       });
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Play, ArrowRight, Search, Clock, Users, Zap, ChevronRight, Star, Sparkles } from 'lucide-react';
@@ -98,6 +98,54 @@ export function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customCourseName, setCustomCourseName] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setSelectedFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const [myCustomCourses, setMyCustomCourses] = useState<any[]>([]);
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMyCourses = async () => {
+      try {
+        const userId = "user_123";
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/custom-courses/${userId}`);
+        const data = await response.json();
+        if (data.status === 'success') {
+          setMyCustomCourses(data.data);
+        }
+      } catch (error) {
+        console.error("获取专属课程失败", error);
+      }
+    };
+    fetchMyCourses();
+  }, []);
+
+
+  const handleStartCustomCourse = () => {
+    if (!customCourseName.trim() || !selectedFile) {
+      alert('请填写课程名称并上传资料哦！');
+      return;
+    }
+    navigate(`/interview/custom`, { 
+      state: { 
+        isCustom: true, 
+        courseTitle: customCourseName, 
+        uploadFile: selectedFile 
+      } 
+    });
+    setIsModalOpen(false);
+  };
+
   const getProgress = (courseId: string) => {
     const c = curricula[courseId];
     if (!c || c.items.length === 0) return null;
@@ -184,6 +232,77 @@ export function HomePage() {
             </div>
           </motion.div>
         </div>
+
+        {/* ========================================== */}
+        {/* 1. 顶部的专属书架：始终显示，统一入口 */}
+        {/* ========================================== */}
+        <div className="mb-20">
+          <h2 className="text-2xl font-bold mb-8 text-slate-800 dark:text-white flex items-center gap-3">
+            <span className="text-3xl">📚</span> 我的专属课程
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+            {/* 遍历渲染已有的自定义课程 */}
+            {myCustomCourses.map((course, index) => (
+              <motion.div
+                key={`custom-${course.course_id}`}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.08, type: 'spring', stiffness: 100, damping: 20 }}
+                onClick={() => navigate(`/curriculum/${course.course_id}`, { state: { courseId: course.course_id, isCustom: true, courseTitle: course.title, syllabusData: course.syllabus } })}
+                className="group relative cursor-pointer p-[1px] rounded-[24px] overflow-hidden hover:-translate-y-2 transition-transform duration-500 flex flex-col min-h-[180px]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-400 via-fuchsia-500 to-pink-500 opacity-20 dark:opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative h-full flex flex-col justify-between bg-white/95 dark:bg-[#12121a]/95 backdrop-blur-xl rounded-[23px] overflow-hidden border border-purple-200 dark:border-purple-500/20 p-6">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCourseToDelete(course.course_id);
+                    }}
+                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 text-slate-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 transition-all z-10"
+                    title="删除课程"
+                  >
+                    <span className="text-sm">🗑️</span>
+                  </button>
+
+                  <div>
+                    <span className="text-3xl mb-4 block">📖</span>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 line-clamp-2 leading-tight pr-8">
+                      {course.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">ID: {course.course_id.substring(0, 12)}...</p>
+                  </div>
+                  <div className="mt-6 flex items-center text-sm font-bold text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                    继续学习 <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+            
+            {/* 🚨 永久固定的“新建”按钮：无论删光没删光，它都钉在这里 */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: myCustomCourses.length * 0.08, type: 'spring', stiffness: 100, damping: 20 }}
+              onClick={() => setIsModalOpen(true)}
+              className="group relative cursor-pointer p-[1px] rounded-[24px] overflow-hidden hover:-translate-y-2 transition-transform duration-500 flex flex-col min-h-[180px]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-400 via-fuchsia-500 to-pink-500 opacity-20 dark:opacity-40 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative h-full flex flex-col items-center justify-center bg-white/95 dark:bg-[#12121a]/95 backdrop-blur-xl rounded-[23px] overflow-hidden border-2 border-dashed border-purple-300 dark:border-purple-500/30 group-hover:bg-purple-50/50 dark:group-hover:bg-purple-900/20 transition-colors">
+                 <div className="w-12 h-12 mb-3 rounded-2xl bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center text-2xl shadow-sm border border-purple-200 dark:border-purple-500/20 group-hover:scale-110 transition-transform">
+                   ✨
+                 </div>
+                 <h3 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                   新建自定义课程
+                 </h3>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Standard Courses Section */}
+        <h2 className="text-2xl font-bold mb-8 text-slate-800 dark:text-white flex items-center gap-3">
+          <span className="text-3xl">🌟</span> 热门课程
+        </h2>
 
         {/* Course Grid */}
         {filteredCourses.length === 0 ? (
@@ -300,6 +419,7 @@ export function HomePage() {
                 </motion.div>
               );
             })}
+            
           </div>
         )}
 
@@ -317,6 +437,136 @@ export function HomePage() {
           <ChevronRight className="w-4 h-4" />
         </motion.div>
       </div>
+
+      {/* Modal UI */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-3xl p-8 w-full max-w-md shadow-2xl relative"
+          >
+            <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">创建自定义课程</h2>
+            
+            {/* 1. 课程名称输入 */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">给这门课起个名字</label>
+              <input 
+                type="text" 
+                value={customCourseName}
+                onChange={(e) => setCustomCourseName(e.target.value)}
+                placeholder="例如：2026考研政治冲刺" 
+                className="w-full p-3.5 border border-slate-200 dark:border-white/10 rounded-xl bg-slate-50 dark:bg-[#12121a] text-slate-800 dark:text-white focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none transition-all placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* 2. 拖拽上传区 */}
+            <div 
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className="mb-8 p-8 border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-violet-400 dark:hover:border-violet-500 rounded-2xl bg-slate-50 dark:bg-[#12121a] hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-all cursor-pointer text-center flex flex-col items-center group"
+            >
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setSelectedFile(e.target.files[0]);
+                  }
+                }} 
+                className="hidden" 
+                accept=".pdf,.txt,.docx" 
+              />
+              <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                <span className="text-3xl">📄</span>
+              </div>
+              {selectedFile ? (
+                <div className="flex flex-col items-center">
+                  <p className="text-emerald-600 dark:text-emerald-400 font-medium mb-1 line-clamp-1 break-all px-4">{selectedFile.name}</p>
+                  <p className="text-xs text-slate-400">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-slate-700 dark:text-slate-200 font-medium mb-1">点击或将文件拖拽到此处</p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500">支持 PDF、TXT、Word 格式</p>
+                </>
+              )}
+            </div>
+
+            {/* 3. 操作按钮 */}
+            <div className="flex justify-end gap-3 mt-8">
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-5 py-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-all font-medium"
+              >
+                取消
+              </button>
+              <button 
+                onClick={handleStartCustomCourse}
+                disabled={!customCourseName.trim() || !selectedFile}
+                className="px-6 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl hover:from-violet-500 hover:to-indigo-500 transition-all font-medium shadow-lg shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                创建课程 <Sparkles className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* ============================== */}
+      {/* 🌟 极其优雅的高级自定义删除弹窗 */}
+      {/* ============================== */}
+      {courseToDelete && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] transition-all p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white dark:bg-gray-800 rounded-[32px] p-8 max-w-sm w-full shadow-2xl border border-slate-100 dark:border-white/10"
+          >
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-50 dark:bg-red-500/10 mb-6 border border-red-100 dark:border-red-500/20">
+                <span className="text-red-500 text-4xl animate-pulse">⚠️</span>
+              </div>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-white mb-3">确认永久删除？</h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm leading-relaxed">
+                删除后，这门专属课程的所有大纲和学习进度将灰飞烟灭，且<span className="text-red-500 font-bold">无法恢复</span>。确定要这么做吗？
+              </p>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setCourseToDelete(null)}
+                className="flex-1 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 px-4 py-4 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-white/10 transition-all active:scale-95"
+              >
+                我再想想
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/custom-courses/${courseToDelete}`, {
+                      method: 'DELETE',
+                    });
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                      setMyCustomCourses(prev => prev.filter(c => c.course_id !== courseToDelete));
+                      setCourseToDelete(null); 
+                    } else {
+                      alert("删除失败: " + data.message);
+                    }
+                  } catch (error) {
+                    console.error("删除失败", error);
+                    alert("网络请求出错，请稍后再试。");
+                  }
+                }}
+                className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white px-4 py-4 rounded-2xl font-bold hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-red-200/50 dark:shadow-red-900/20"
+              >
+                果断删除
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -159,13 +159,13 @@ export function NotesPage() {
       const weakPoints = weakItems.map(i => i.title).join("、") || "暂无明显薄弱点";
 
       // 2. 呼叫后端真正的“教研组长” API
-      const response = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/notes/generate', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/notes/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          course_name: course?.name || "未知课程",
-          learned_topics: learnedTopics,
-          weak_points: weakPoints
+          course_id: openNoteId,
+          user_id: "user_123",
+          chapter_title: openNote?.title || "未知章节"
         })
       });
 
@@ -199,7 +199,7 @@ export function NotesPage() {
     
     setIsMindmapping(true);
     try {
-      const response = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/notes/extract-mindmap', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/notes/extract-mindmap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: editContent })

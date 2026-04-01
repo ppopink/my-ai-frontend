@@ -176,14 +176,14 @@ export function LearnPage() {
       const prefs = JSON.parse(localStorage.getItem('userPreferences') || '{}');
       const currentStyle = prefs.aiStyle || "鼓励引导型"; 
 
-      const response = await fetch('https://personalizedlearningassistant-backend.onrender.com/api/study/tutor-chat/stream', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/study/tutor-chat/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: newMessages.slice(-6).map(m => ({ role: m.role, content: m.content })),
-          question_context: qContext,
-          user_action: userAction,
-          tutor_style: currentStyle 
+          username: "user_123",
+          current_question: { text: currentQ?.question || "知识点学习" }, // Fixed: Must be a dict
+          persona: currentStyle 
         })
       });
 
