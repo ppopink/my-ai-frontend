@@ -2,6 +2,10 @@ import { createBrowserRouter } from "react-router";
 import { RootLayout } from "./components/RootLayout";
 import { HomePage } from "./components/HomePage";
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+import { InterviewPage } from "./components/InterviewPage";
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
 import { InterviewPage } from "./components/InterviewPage";
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
@@ -17,6 +21,10 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: HomePage },
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+      { path: "interview/:courseId", Component: InterviewPage },
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
       { path: "interview/:courseId", Component: InterviewPage },
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
@@ -28,7 +36,11 @@ export const router = createBrowserRouter([
     ],
   },
 <<<<<<< HEAD
+<<<<<<< HEAD
 ]);
+=======
+]);
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
 ]);
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d

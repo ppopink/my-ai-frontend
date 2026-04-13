@@ -135,7 +135,10 @@ html.dark ::-webkit-scrollbar-track { background: #0f172a; }
 html.dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 html.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
 /* Global Animations */
 @keyframes fadeIn {
@@ -146,4 +149,7 @@ html.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
 .animate-fade-in {
   animation: fadeIn 0.6s ease-out forwards;
 }
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d

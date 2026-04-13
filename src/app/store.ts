@@ -98,7 +98,11 @@ export const COURSES: CourseInfo[] = [
 export const INTERVIEW_QUESTIONS: Record<string, string[]> = {
   python: [
 <<<<<<< HEAD
+<<<<<<< HEAD
     '先聊聊你自己吧 😊 你是学生、上班族还是纯粹因为兴趣想学编程？',
+=======
+    '先聊聊你自己吧 😊 你是学生、上班族还是纯粹因为兴趣想学这个领域？',
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
     '先聊聊你自己吧 😊 你是学生、上班族还是纯粹因为兴趣想学这个领域？',
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
@@ -158,7 +162,10 @@ export const INTERVIEW_QUESTIONS: Record<string, string[]> = {
     '你是喜欢先系统学完语法再写项目，还是边学边做、实战驱动？',
   ],
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   custom: [
     '关于这门课，你觉得自己目前是零基础小白，还是已经有一些了解了？',
     '你希望通过这门课达到什么样的目标？比如解决某个具体问题、通过考试、或者纯粹是兴趣？',
@@ -166,6 +173,9 @@ export const INTERVIEW_QUESTIONS: Record<string, string[]> = {
     '你每天大概能抽出多少时间来学习？',
     '有没有什么特别关注的重点或难点？',
   ],
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 };
 
@@ -448,6 +458,7 @@ export function generateLearningResponse(courseId: string, topicTitle: string, u
 
 // Generate quiz questions for a section
 <<<<<<< HEAD
+<<<<<<< HEAD
 export async function generateQuizQuestions(courseId: string, sectionId: string, sectionTitle: string): Promise<QuizQuestion[]> {
   try {
     const response = await fetch('http://127.0.0.1:8000/api/study/generate-questions', {
@@ -478,6 +489,8 @@ export async function generateQuizQuestions(courseId: string, sectionId: string,
 }
 
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 export function generateQuizQuestions(courseId: string, sectionId: string, sectionTitle: string): QuizQuestion[] {
   // Comprehensive question bank mapped by sectionId
   const questionBank: Record<string, QuizQuestion[]> = {
@@ -554,6 +567,9 @@ export function generateQuizQuestions(courseId: string, sectionId: string, secti
     { id: 'q3', type: 'choice', question: `遇到「${sectionTitle}」相关的问题时，以下哪种做法最好？`, options: [{ label: 'A', text: '直接跳过' }, { label: 'B', text: '先尝试自己思考解决，再查阅资料' }, { label: 'C', text: '直接复制别人的答案' }, { label: 'D', text: '换一个更简单的课程' }], answer: 'B', explanation: '遇到问题时先自己思考，再查阅资料是最好的学习方式，能锻炼独立解决问题的能力。', hint: '好的学习习惯是什么？' },
   ];
 }
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
 // Generate tutor response for quiz companion (never gives the answer directly)

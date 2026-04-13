@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion } from "motion/react";
@@ -10,6 +11,8 @@ import { LEGACY_STORAGE_KEYS, writeStorage } from "../lib/storage";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import type { NoteListItem } from "../types/learning";
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
@@ -99,11 +102,15 @@ function MermaidChart({ code }: { code: string }) {
     />
   );
 }
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
 export function NotesPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
+<<<<<<< HEAD
 <<<<<<< HEAD
   const {
     userId,
@@ -235,6 +242,8 @@ export function NotesPage() {
     } catch (generateError) {
       setError(generateError instanceof Error ? generateError.message : "笔记生成失败");
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
   // If courseId is present, this is a course-scoped notes view (locked to that course)
   const isCourseLocked = !!courseId;
@@ -333,12 +342,16 @@ export function NotesPage() {
     } catch (error) {
       console.error("生成笔记出错:", error);
       alert("生成失败，请检查后端服务是否正常连接！");
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     } finally {
       setGenerating(false);
     }
   };
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   if (selectedNote) {
     const noteCourse = getCourseById(selectedNote.course_id);
@@ -524,6 +537,8 @@ export function NotesPage() {
         </div>
       ) : null}
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const handleGenerateMindmap = async () => {
     if (!editContent.trim() || isMindmapping) return;
     
@@ -883,6 +898,9 @@ export function NotesPage() {
           })}
         </div>
       )}
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     </div>
   );

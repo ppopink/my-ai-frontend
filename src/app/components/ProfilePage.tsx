@@ -12,7 +12,10 @@ import {
   type Curriculum, type Note,
 } from '../store';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useLearningApp } from '../context/LearningAppContext';
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -61,6 +64,7 @@ function SettingsModal({ open, onClose, title, children }: { open: boolean; onCl
 export function ProfilePage() {
   const navigate = useNavigate();
 <<<<<<< HEAD
+<<<<<<< HEAD
   const { displayName, setDisplayName, resetLearningState } = useLearningApp();
   const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
   const notes = loadData<Note[]>(STORAGE_KEYS.notes, []);
@@ -73,12 +77,17 @@ export function ProfilePage() {
     setTempName(displayName);
   }, [displayName]);
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
   const notes = loadData<Note[]>(STORAGE_KEYS.notes, []);
 
   const [userName, setUserName] = useState(() => localStorage.getItem('lp_username') || '学习探索者');
   const [editing, setEditing] = useState(false);
   const [tempName, setTempName] = useState(userName);
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
   // Modal states
@@ -122,7 +131,12 @@ export function ProfilePage() {
   const saveName = () => {
     if (!tempName.trim()) return;
 <<<<<<< HEAD
+<<<<<<< HEAD
     setDisplayName(tempName.trim());
+=======
+    localStorage.setItem('lp_username', tempName.trim());
+    setUserName(tempName.trim());
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
     localStorage.setItem('lp_username', tempName.trim());
     setUserName(tempName.trim());
@@ -478,7 +492,13 @@ export function ProfilePage() {
                 if (item.danger) {
                   if (confirm('确定要清除所有学习数据吗？此操作不可恢复。')) {
 <<<<<<< HEAD
+<<<<<<< HEAD
                     resetLearningState();
+=======
+                    Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
+                    Object.keys(localStorage).filter(k => k.startsWith('lp_')).forEach(k => localStorage.removeItem(k));
+                    window.location.href = '/';
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
                     Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
                     Object.keys(localStorage).filter(k => k.startsWith('lp_')).forEach(k => localStorage.removeItem(k));

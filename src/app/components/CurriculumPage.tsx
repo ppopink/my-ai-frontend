@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { motion } from "motion/react";
@@ -115,6 +116,8 @@ export function CurriculumPage() {
       <div className="mx-auto max-w-3xl px-4 py-16 text-center text-slate-500">
         <p>课程不存在。</p>
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
@@ -264,11 +267,15 @@ export function CurriculumPage() {
       <div className="max-w-2xl mx-auto px-4 py-32 text-center">
         <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p className="text-gray-500 animate-pulse">正在从云端获取你的专属学习计划...</p>
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       </div>
     );
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   if (loading && !plan) {
     return (
@@ -290,12 +297,17 @@ export function CurriculumPage() {
         >
           返回首页开始
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   if (!curriculum || chapters.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <p className="text-gray-500 mb-4">你还没有开始这门课程</p>
         <button onClick={() => navigate(`/interview/${courseId}`)} className="px-6 py-2 bg-violet-500 text-white rounded-lg">
           开始采访
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         </button>
       </div>
@@ -303,6 +315,7 @@ export function CurriculumPage() {
   }
 
   return (
+<<<<<<< HEAD
 <<<<<<< HEAD
     <div className="mx-auto max-w-6xl px-4 py-6 pb-24">
       <div className="mb-6 flex items-center gap-3">
@@ -419,6 +432,8 @@ export function CurriculumPage() {
           const chapterCompleted = chapter.sections.filter((section) => completedSections.has(section.id)).length;
           const isCurrentChapter = currentChapterId === chapter.id;
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     <div className="max-w-3xl mx-auto px-4 py-6 pb-24">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -470,6 +485,9 @@ export function CurriculumPage() {
           const chProgress = getChapterProgress(chapter);
           const chStatus = getChapterStatus(chapter);
           const completedInCh = chapter.sections.filter(s => s.completed).length;
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
           return (
@@ -477,6 +495,7 @@ export function CurriculumPage() {
               key={chapter.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+<<<<<<< HEAD
 <<<<<<< HEAD
               transition={{ delay: chapterIndex * 0.05 }}
               className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm"
@@ -586,6 +605,8 @@ export function CurriculumPage() {
                 </div>
               ) : null}
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
               transition={{ delay: chIdx * 0.04 }}
               className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm"
             >
@@ -720,11 +741,15 @@ export function CurriculumPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
             </motion.div>
           );
         })}
       </div>
+<<<<<<< HEAD
 <<<<<<< HEAD
 
       {error ? (
@@ -733,6 +758,8 @@ export function CurriculumPage() {
           <p className="mt-1">{error}</p>
         </div>
       ) : null}
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     </div>

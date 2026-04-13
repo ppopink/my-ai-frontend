@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { MessageCircle, Send, X, Bot, User, Trash2 } from "lucide-react";
@@ -240,6 +241,8 @@ export function GlobalAgent() {
           </motion.div>
         ) : null}
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -550,6 +553,9 @@ export function GlobalAgent() {
             </div>
           </motion.div>
         )}
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       </AnimatePresence>
     </>

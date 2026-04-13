@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
@@ -63,6 +64,8 @@ function getCompletedChapterIds(chapters: CourseChapter[], completedSectionIds: 
     .map((chapter) => chapter.id);
 }
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
@@ -74,11 +77,15 @@ import {
   COURSES, STORAGE_KEYS, loadData, saveData, generateQuizQuestions, generateTutorResponse,
   type Curriculum, type ChatMessage, type CurriculumSection, type QuizQuestion,
 } from '../store';
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
 export function LearnPage() {
   const { courseId, itemId } = useParams<{ courseId: string; itemId: string }>();
   const navigate = useNavigate();
+<<<<<<< HEAD
 <<<<<<< HEAD
   const {
     userId,
@@ -420,6 +427,8 @@ export function LearnPage() {
         <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
         <p className="font-medium">正在准备课程内容与学习上下文...</p>
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const course = COURSES.find(c => c.id === courseId);
 
   const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
@@ -648,11 +657,15 @@ export function LearnPage() {
       <div className="text-center py-16">
         <p className="text-gray-500">章节未找到</p>
         <button onClick={() => navigate(-1)} className="mt-4 text-violet-600">返回</button>
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       </div>
     );
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   if (!plan || !sectionEntry) {
     return (
@@ -1138,6 +1151,8 @@ export function LearnPage() {
           </div>
         </aside>
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   // Result screen
   if (showResult) {
     const accuracy = questions.length > 0 ? Math.round((correctCount / questions.length) * 100) : 0;
@@ -1567,6 +1582,9 @@ export function LearnPage() {
             </motion.div>
           )}
         </AnimatePresence>
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       </div>
     </div>

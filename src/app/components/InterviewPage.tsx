@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useParams, useNavigate } from 'react-router';
+=======
+import { useParams, useNavigate, useLocation } from 'react-router';
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
 import { useParams, useNavigate, useLocation } from 'react-router';
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
@@ -18,10 +22,13 @@ export function InterviewPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
 <<<<<<< HEAD
+<<<<<<< HEAD
   const course = COURSES.find(c => c.id === courseId);
 
   const questions = INTERVIEW_QUESTIONS[courseId!] || INTERVIEW_QUESTIONS.python;
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const location = useLocation();
   const { isCustom, courseTitle, uploadFile } = (location.state as any) || {};
 
@@ -32,6 +39,9 @@ export function InterviewPage() {
   const questions = isCustom 
     ? INTERVIEW_QUESTIONS.custom
     : (INTERVIEW_QUESTIONS[courseId!] || INTERVIEW_QUESTIONS.python);
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
@@ -39,6 +49,7 @@ export function InterviewPage() {
   const [input, setInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+<<<<<<< HEAD
 <<<<<<< HEAD
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -48,6 +59,8 @@ export function InterviewPage() {
         role: 'assistant',
         content: `你好！欢迎来到「${course?.name}」课程 ${course?.icon}\n\n在开始学习之前，我想先了解一下你的情况，这样才能为你量身定制最适合的学习路径。\n\n${questions[0]}`,
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const [isInterviewFinished, setIsInterviewFinished] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +73,9 @@ export function InterviewPage() {
       {
         role: 'assistant',
         content: `${greeting}\n\n为了给你生成最完美的专属大纲，我们需要简单聊几句。\n\n${questions[0]}`,
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         timestamp: new Date().toISOString(),
       },
@@ -71,6 +87,7 @@ export function InterviewPage() {
   }, [messages, isTyping]);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   const handleSend = () => {
     if (!input.trim() || generating || isTyping) return;
 
@@ -78,6 +95,8 @@ export function InterviewPage() {
     setMessages(prev => [...prev, userMsg]);
     const newAnswers = [...answers, input];
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const [isPlanLoading, setIsPlanLoading] = useState(false);
 
   const handleGeneratePlan = async () => {
@@ -162,12 +181,16 @@ export function InterviewPage() {
     const userMsg: ChatMessage = { role: 'user', content: userText, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, userMsg]);
     const newAnswers = [...answers, userText];
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     setAnswers(newAnswers);
     setInput('');
 
     const nextQ = currentQ + 1;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     if (nextQ < questions.length) {
       const transitions = [
@@ -196,6 +219,8 @@ export function InterviewPage() {
       setGenerating(true);
       setTimeout(() => {
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     try {
       if (nextQ < questions.length) {
         setIsTyping(true);
@@ -259,6 +284,9 @@ export function InterviewPage() {
         setIsTyping(true);
         setGenerating(true);
 
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         const items = generateCurriculum(courseId!, newAnswers);
         const chapters = generateChapters(courseId!, newAnswers);
@@ -273,6 +301,7 @@ export function InterviewPage() {
         saveData(STORAGE_KEYS.profiles, profiles);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         setIsTyping(false);
         setMessages(prev => [...prev, {
           role: 'assistant',
@@ -286,6 +315,8 @@ export function InterviewPage() {
 
   const isFinished = currentQ >= questions.length - 1 && answers.length >= questions.length;
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         // Fetch reader for the final summary
         const response2 = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/agent/chat/stream`, {
           method: 'POST',
@@ -361,11 +392,15 @@ export function InterviewPage() {
   const isFinished = isInterviewFinished || (currentQ >= questions.length - 1 && answers.length >= questions.length);
   const userMessageCount = messages.filter(m => m.role === 'user').length;
   const currentProgress = isFinished ? 100 : Math.min(90, 10 + userMessageCount * 25);
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col h-[calc(100vh-64px)]">
       {/* Progress Bar */}
+<<<<<<< HEAD
 <<<<<<< HEAD
       <div className="mb-4">
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-1.5">
@@ -377,6 +412,8 @@ export function InterviewPage() {
             className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500"
             style={{ width: `${(Math.min(answers.length, questions.length) / questions.length) * 100}%` }}
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       <div className="mb-6">
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span className="font-medium">{course?.icon} {course?.name} - 个人情况采访</span>
@@ -386,6 +423,9 @@ export function InterviewPage() {
           <div
             className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-700 ease-out"
             style={{ width: `${currentProgress}%` }}
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
           />
         </div>
@@ -410,11 +450,14 @@ export function InterviewPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
 <<<<<<< HEAD
+<<<<<<< HEAD
           onClick={() => navigate(`/curriculum/${courseId}`)}
           className="w-full py-3 bg-gradient-to-r from-violet-500 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-opacity"
         >
           🚀 查看我的学习计划
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
           onClick={handleGeneratePlan}
           disabled={isPlanLoading}
           className={`w-full py-3 rounded-xl text-white font-medium transition-all ${
@@ -429,6 +472,9 @@ export function InterviewPage() {
               正在为你疯狂定制中...
             </span>
           ) : '🚀 查看我的学习计划'}
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         </motion.button>
       ) : (
@@ -438,8 +484,13 @@ export function InterviewPage() {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
 <<<<<<< HEAD
+<<<<<<< HEAD
             placeholder="输入你的回答..."
             disabled={generating || isTyping}
+=======
+            placeholder={isFinished ? "采访已结束" : "输入你的回答..."}
+            disabled={generating || isTyping || isFinished}
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
             placeholder={isFinished ? "采访已结束" : "输入你的回答..."}
             disabled={generating || isTyping || isFinished}
@@ -449,7 +500,11 @@ export function InterviewPage() {
           <button
             onClick={handleSend}
 <<<<<<< HEAD
+<<<<<<< HEAD
             disabled={!input.trim() || generating || isTyping}
+=======
+            disabled={!input.trim() || generating || isTyping || isFinished}
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
             disabled={!input.trim() || generating || isTyping || isFinished}
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d

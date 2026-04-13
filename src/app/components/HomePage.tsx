@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
@@ -63,6 +64,8 @@ export function HomePage() {
     setInterviewCourseId(null);
     navigate(`/curriculum/${courseId}`);
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
@@ -226,6 +229,9 @@ export function HomePage() {
     } else {
       navigate(`/interview/${courseId}`);
     }
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   };
 
@@ -234,11 +240,17 @@ export function HomePage() {
     course.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 <<<<<<< HEAD
+<<<<<<< HEAD
   const selectedCourse = useMemo(() => getCourseById(interviewCourseId), [interviewCourseId]);
 
   return (
     <>
       <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-slate-50 dark:bg-[#09090b] transition-colors duration-500">
+=======
+
+  return (
+    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-slate-50 dark:bg-[#09090b] transition-colors duration-500">
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
 
   return (
@@ -308,7 +320,10 @@ export function HomePage() {
         </div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         {/* ========================================== */}
         {/* 1. 顶部的专属书架：始终显示，统一入口 */}
         {/* ========================================== */}
@@ -380,6 +395,9 @@ export function HomePage() {
           <span className="text-3xl">🌟</span> 热门课程
         </h2>
 
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         {/* Course Grid */}
         {filteredCourses.length === 0 ? (
@@ -401,7 +419,11 @@ export function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.08, type: 'spring', stiffness: 100, damping: 20 }}
 <<<<<<< HEAD
+<<<<<<< HEAD
                   onClick={() => void handleCourseClick(course.id)}
+=======
+                  onClick={() => handleCourseClick(course.id)}
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
                   onClick={() => handleCourseClick(course.id)}
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
@@ -431,7 +453,11 @@ export function HomePage() {
                           {prog && (
                             <div className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
 <<<<<<< HEAD
+<<<<<<< HEAD
                               ✓ 已有蓝图
+=======
+                              ✓ 已加入
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
                               ✓ 已加入
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
@@ -490,7 +516,11 @@ export function HomePage() {
                           </div>
                           <button className="w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2 group/btn">
 <<<<<<< HEAD
+<<<<<<< HEAD
                             {checkingCourseId === course.id ? "检查中..." : "继续学习"}
+=======
+                            继续学习
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
                             继续学习
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
@@ -501,7 +531,11 @@ export function HomePage() {
                         <button className="mt-auto w-full py-3 rounded-xl text-sm font-bold bg-slate-900 dark:bg-[#ffffff] text-white dark:text-slate-900 flex items-center justify-center gap-2 group/btn shadow-lg shadow-slate-900/10 dark:shadow-white/10 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors">
                           <Play className="w-4 h-4 fill-current transition-transform group-hover/btn:scale-110" />
 <<<<<<< HEAD
+<<<<<<< HEAD
                           {checkingCourseId === course.id ? "检查已有蓝图..." : "开始定制学习路径"}
+=======
+                          开始定制学习路径
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
                           开始定制学习路径
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
@@ -513,6 +547,10 @@ export function HomePage() {
               );
             })}
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+            
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 =======
             
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
@@ -534,6 +572,7 @@ export function HomePage() {
         </motion.div>
       </div>
 <<<<<<< HEAD
+<<<<<<< HEAD
       </div>
 
       {lookupError ? (
@@ -550,6 +589,8 @@ export function HomePage() {
       />
     </>
 =======
+=======
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
       {/* Modal UI */}
       {isModalOpen && (
@@ -681,6 +722,9 @@ export function HomePage() {
         </div>
       )}
     </div>
+<<<<<<< HEAD
+>>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+=======
 >>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   );
 }
