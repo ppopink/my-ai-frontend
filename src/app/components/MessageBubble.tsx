@@ -1,25 +1,9 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { motion } from "motion/react";
-import { Bot, User } from "lucide-react";
-import { MarkdownRenderer } from "./MarkdownRenderer";
-
-export interface MessageBubbleProps {
-  content: string;
-  role: "user" | "assistant";
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { motion } from 'motion/react';
 import { Bot, User } from 'lucide-react';
 
 export interface MessageBubbleProps {
   content: string;
   role: 'user' | 'assistant';
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   isStreaming?: boolean;
 }
 
@@ -30,15 +14,7 @@ export function MessageBubble({ content, role, isStreaming = false }: MessageBub
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-<<<<<<< HEAD
-<<<<<<< HEAD
-      transition={{ duration: 0.3, ease: "easeOut" }}
-=======
       transition={{ duration: 0.3, ease: 'easeOut' }}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-      transition={{ duration: 0.3, ease: 'easeOut' }}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
     >
       {/* Avatar */}
@@ -64,22 +40,7 @@ export function MessageBubble({ content, role, isStreaming = false }: MessageBub
             : 'bg-white border border-gray-200 text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200'
         }`}
       >
-<<<<<<< HEAD
-<<<<<<< HEAD
-        {isUser ? (
-          content
-        ) : (
-          <MarkdownRenderer
-            content={content}
-            className="[&_*]:text-inherit [&_pre]:bg-slate-950 [&_pre]:text-slate-100 [&_pre]:shadow-none [&_pre]:border-0"
-          />
-        )}
-=======
         {content}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-        {content}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         {isStreaming && (
           <span className="inline-block w-2 h-4 ml-1 bg-current rounded-sm animate-pulse align-middle" />
         )}

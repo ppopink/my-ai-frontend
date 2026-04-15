@@ -1,76 +1,13 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
-import { motion } from "motion/react";
-import { Play, ArrowRight, Search, Zap, ChevronRight, Star, Sparkles } from "lucide-react";
-import { COURSE_META, COURSES, getCourseById } from "../courseCatalog";
-import { InterviewModal } from "./InterviewModal";
-import { useLearningApp } from "../context/LearningAppContext";
-import { learningApi } from "../lib/api";
-
-export function HomePage() {
-  const navigate = useNavigate();
-  const { userId, coursePlans, progressSnapshots, setActiveCourseId, saveCoursePlan } = useLearningApp();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [interviewCourseId, setInterviewCourseId] = useState<string | null>(null);
-  const [checkingCourseId, setCheckingCourseId] = useState<string | null>(null);
-  const [lookupError, setLookupError] = useState("");
-
-  const getProgress = (courseId: string) => {
-    const plan = coursePlans[courseId];
-    if (!plan) return null;
-
-    const snapshot = progressSnapshots[courseId]?.progress;
-    const total = snapshot?.section_total ?? plan.chapters.reduce((sum, chapter) => sum + chapter.sections.length, 0);
-    const completed = snapshot?.completed_section_count ?? 0;
-    const progress = Math.round(snapshot?.section_progress_percent ?? 0);
-
-    return { progress, completed, total };
-  };
-
-  const handleCourseClick = async (courseId: string) => {
-    setActiveCourseId(courseId);
-    setLookupError("");
-    if (coursePlans[courseId]) {
-      navigate(`/curriculum/${courseId}`);
-      return;
-    }
-
-    let shouldOpenInterview = true;
-    setCheckingCourseId(courseId);
-    try {
-      const result = await learningApi.getCoursePlan(userId, courseId);
-      if (result.data) {
-        saveCoursePlan(courseId, result.data);
-        navigate(`/curriculum/${courseId}`);
-        return;
-      }
-    } catch (loadError) {
-      if (!(loadError instanceof Error) || !loadError.message.includes("未找到")) {
-        shouldOpenInterview = false;
-        setLookupError(loadError instanceof Error ? loadError.message : "课程状态检查失败");
-      }
-    } finally {
-      setCheckingCourseId(null);
-    }
-
-    if (shouldOpenInterview) {
-      setInterviewCourseId(courseId);
-    }
-  };
-
-  const handleInterviewCompleted = (courseId: string) => {
-    setInterviewCourseId(null);
-    navigate(`/curriculum/${courseId}`);
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { motion } from 'motion/react';
 import { Play, ArrowRight, Search, Clock, Users, Zap, ChevronRight, Star, Sparkles } from 'lucide-react';
 import { COURSES, STORAGE_KEYS, loadData, type Curriculum } from '../store';
+import { API_BASE_URL } from '../lib/api';
+import {
+  registerCourseRecord,
+  resolveCourseId,
+} from '../lib/courseRegistry';
 
 // Modern, vibrant course metadata
 const COURSE_META: Record<string, {
@@ -186,9 +123,18 @@ export function HomePage() {
     const fetchMyCourses = async () => {
       try {
         const userId = "user_123";
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/custom-courses/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/api/user/custom-courses/${userId}`);
         const data = await response.json();
         if (data.status === 'success') {
+          data.data.forEach((course: { course_id: string; title: string }) => {
+            registerCourseRecord({
+              actualCourseId: course.course_id,
+              title: course.title,
+              icon: '✨',
+              color: '#8b5cf6',
+              isCustom: true,
+            });
+          });
           setMyCustomCourses(data.data);
         }
       } catch (error) {
@@ -215,7 +161,8 @@ export function HomePage() {
   };
 
   const getProgress = (courseId: string) => {
-    const c = curricula[courseId];
+    const actualCourseId = resolveCourseId(courseId) || courseId;
+    const c = curricula[actualCourseId];
     if (!c || c.items.length === 0) return null;
     const total = c.items.length;
     const progress = Math.round(c.items.reduce((s, i) => s + i.progress, 0) / total);
@@ -224,38 +171,21 @@ export function HomePage() {
   };
 
   const handleCourseClick = (courseId: string) => {
-    if (curricula[courseId]) {
-      navigate(`/curriculum/${courseId}`);
+    const actualCourseId = resolveCourseId(courseId) || courseId;
+    if (actualCourseId !== courseId || curricula[actualCourseId]) {
+      navigate(`/curriculum/${actualCourseId}`);
     } else {
       navigate(`/interview/${courseId}`);
     }
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   };
 
   const filteredCourses = COURSES.filter(course =>
     course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     course.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const selectedCourse = useMemo(() => getCourseById(interviewCourseId), [interviewCourseId]);
-
-  return (
-    <>
-      <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-slate-50 dark:bg-[#09090b] transition-colors duration-500">
-=======
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-slate-50 dark:bg-[#09090b] transition-colors duration-500">
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-
-  return (
-    <div className="relative min-h-[calc(100vh-64px)] overflow-hidden bg-slate-50 dark:bg-[#09090b] transition-colors duration-500">
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       {/* Background Decor */}
       <div className="absolute inset-0 z-0 pointer-events-none flex justify-center overflow-hidden">
         {/* Modern Grid */}
@@ -319,11 +249,6 @@ export function HomePage() {
           </motion.div>
         </div>
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         {/* ========================================== */}
         {/* 1. 顶部的专属书架：始终显示，统一入口 */}
         {/* ========================================== */}
@@ -395,10 +320,6 @@ export function HomePage() {
           <span className="text-3xl">🌟</span> 热门课程
         </h2>
 
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         {/* Course Grid */}
         {filteredCourses.length === 0 ? (
           <div className="text-center py-24 text-slate-500">
@@ -418,15 +339,7 @@ export function HomePage() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.08, type: 'spring', stiffness: 100, damping: 20 }}
-<<<<<<< HEAD
-<<<<<<< HEAD
-                  onClick={() => void handleCourseClick(course.id)}
-=======
                   onClick={() => handleCourseClick(course.id)}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-                  onClick={() => handleCourseClick(course.id)}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
                   className="group relative cursor-pointer p-[1px] rounded-[24px] overflow-hidden hover:-translate-y-2 transition-transform duration-500 flex flex-col"
                 >
                   {/* Glowing Border Background */}
@@ -452,15 +365,7 @@ export function HomePage() {
                           )}
                           {prog && (
                             <div className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
-<<<<<<< HEAD
-<<<<<<< HEAD
-                              ✓ 已有蓝图
-=======
                               ✓ 已加入
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-                              ✓ 已加入
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
                             </div>
                           )}
                         </div>
@@ -515,30 +420,14 @@ export function HomePage() {
                             <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" style={{ width: `${prog.progress}%` }} />
                           </div>
                           <button className="w-full py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2 group/btn">
-<<<<<<< HEAD
-<<<<<<< HEAD
-                            {checkingCourseId === course.id ? "检查中..." : "继续学习"}
-=======
                             继续学习
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-                            继续学习
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
                             <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
                           </button>
                         </div>
                       ) : (
                         <button className="mt-auto w-full py-3 rounded-xl text-sm font-bold bg-slate-900 dark:bg-[#ffffff] text-white dark:text-slate-900 flex items-center justify-center gap-2 group/btn shadow-lg shadow-slate-900/10 dark:shadow-white/10 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors">
                           <Play className="w-4 h-4 fill-current transition-transform group-hover/btn:scale-110" />
-<<<<<<< HEAD
-<<<<<<< HEAD
-                          {checkingCourseId === course.id ? "检查已有蓝图..." : "开始定制学习路径"}
-=======
                           开始定制学习路径
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-                          开始定制学习路径
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
                         </button>
                       )}
                     </div>
@@ -546,14 +435,7 @@ export function HomePage() {
                 </motion.div>
               );
             })}
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
             
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-            
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
           </div>
         )}
 
@@ -571,26 +453,6 @@ export function HomePage() {
           <ChevronRight className="w-4 h-4" />
         </motion.div>
       </div>
-<<<<<<< HEAD
-<<<<<<< HEAD
-      </div>
-
-      {lookupError ? (
-        <div className="fixed bottom-6 left-1/2 z-40 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 shadow-lg">
-          {lookupError}
-        </div>
-      ) : null}
-
-      <InterviewModal
-        course={selectedCourse || null}
-        open={Boolean(selectedCourse)}
-        onClose={() => setInterviewCourseId(null)}
-        onCompleted={handleInterviewCompleted}
-      />
-    </>
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
       {/* Modal UI */}
       {isModalOpen && (
@@ -697,7 +559,7 @@ export function HomePage() {
               <button
                 onClick={async () => {
                   try {
-                    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/custom-courses/${courseToDelete}`, {
+                    const response = await fetch(`${API_BASE_URL}/api/user/custom-courses/${courseToDelete}`, {
                       method: 'DELETE',
                     });
                     const data = await response.json();
@@ -722,9 +584,5 @@ export function HomePage() {
         </div>
       )}
     </div>
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   );
 }

@@ -1,17 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { useParams, useNavigate } from 'react-router';
-=======
 import { useParams, useNavigate, useLocation } from 'react-router';
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-import { useParams, useNavigate, useLocation } from 'react-router';
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { motion } from 'motion/react';
 import { Send } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { TypingIndicator } from './TypingIndicator';
+import { API_BASE_URL } from '../lib/api';
+import {
+  moveProfileCourseId,
+  persistCurriculumFromSyllabus,
+  registerCourseRecord,
+} from '../lib/courseRegistry';
 import {
   COURSES, INTERVIEW_QUESTIONS, STORAGE_KEYS,
   loadData, saveData, generateCurriculum, generateChapters,
@@ -21,14 +19,6 @@ import {
 export function InterviewPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const course = COURSES.find(c => c.id === courseId);
-
-  const questions = INTERVIEW_QUESTIONS[courseId!] || INTERVIEW_QUESTIONS.python;
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const location = useLocation();
   const { isCustom, courseTitle, uploadFile } = (location.state as any) || {};
 
@@ -39,28 +29,12 @@ export function InterviewPage() {
   const questions = isCustom 
     ? INTERVIEW_QUESTIONS.custom
     : (INTERVIEW_QUESTIONS[courseId!] || INTERVIEW_QUESTIONS.python);
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMessages([
-      {
-        role: 'assistant',
-        content: `你好！欢迎来到「${course?.name}」课程 ${course?.icon}\n\n在开始学习之前，我想先了解一下你的情况，这样才能为你量身定制最适合的学习路径。\n\n${questions[0]}`,
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const [isInterviewFinished, setIsInterviewFinished] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -73,10 +47,6 @@ export function InterviewPage() {
       {
         role: 'assistant',
         content: `${greeting}\n\n为了给你生成最完美的专属大纲，我们需要简单聊几句。\n\n${questions[0]}`,
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         timestamp: new Date().toISOString(),
       },
     ]);
@@ -86,17 +56,6 @@ export function InterviewPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const handleSend = () => {
-    if (!input.trim() || generating || isTyping) return;
-
-    const userMsg: ChatMessage = { role: 'user', content: input, timestamp: new Date().toISOString() };
-    setMessages(prev => [...prev, userMsg]);
-    const newAnswers = [...answers, input];
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const [isPlanLoading, setIsPlanLoading] = useState(false);
 
   const handleGeneratePlan = async () => {
@@ -119,13 +78,13 @@ export function InterviewPage() {
         }));
         formData.append('user_id', "user_123");
 
-        response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/onboarding/generate-custom-syllabus`, {
+        response = await fetch(`${API_BASE_URL}/api/onboarding/generate-custom-syllabus`, {
           method: 'POST',
           body: formData, // No headers: browser sets boundary
         });
       } else {
         // 🟢 Standard Course: Send JSON
-        response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/onboarding/generate-syllabus`, {
+        response = await fetch(`${API_BASE_URL}/api/onboarding/generate-syllabus`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -142,25 +101,42 @@ export function InterviewPage() {
       const result = await response.json();
       
       if (result.status === 'success' && result.data) {
-        // Save the AI-generated syllabus to localStorage for CurriculumPage to consume (fallback)
-        localStorage.setItem('customSyllabus', JSON.stringify(result.data));
-        
-        // Also save the summary to the user profile in store
-        const targetCourseId = isCustom ? 'custom' : courseId!;
-        const profiles = loadData<Record<string, UserProfile>>(STORAGE_KEYS.profiles, {});
-        profiles[targetCourseId] = { 
-          courseId: targetCourseId, 
-          answers, 
-          summary: "AI 已根据您的资料与访谈为您量身定制了专属学习路径。" 
-        };
-        saveData(STORAGE_KEYS.profiles, profiles);
-        
-        navigate(`/curriculum/${targetCourseId}`, { 
+        const generatedCourseId =
+          typeof result.course_id === 'string' && result.course_id.trim()
+            ? result.course_id.trim()
+            : courseId!;
+        const previousCourseId = isCustom ? 'custom' : courseId!;
+        const resolvedCourseTitle = isCustom ? (courseTitle || '自定义课程') : (course?.name || courseId!);
+
+        registerCourseRecord({
+          actualCourseId: generatedCourseId,
+          catalogCourseId: isCustom ? undefined : courseId!,
+          title: resolvedCourseTitle,
+          icon: isCustom ? '✨' : course?.icon,
+          color: isCustom ? '#8b5cf6' : course?.color,
+          isCustom: Boolean(isCustom),
+        });
+
+        persistCurriculumFromSyllabus({
+          actualCourseId: generatedCourseId,
+          previousCourseId,
+          syllabusData: result.data,
+        });
+
+        moveProfileCourseId({
+          previousCourseId,
+          actualCourseId: generatedCourseId,
+          fallbackAnswers: answers,
+          fallbackSummary: "AI 已根据您的资料与访谈为您量身定制了专属学习路径。",
+        });
+
+        navigate(`/curriculum/${generatedCourseId}`, { 
           state: { 
-            isCustom: isCustom,
+            actualCourseId: generatedCourseId,
+            isCustom: Boolean(isCustom),
             syllabusData: result.data, 
-            courseTitle: course?.name,
-            courseId: result.course_id
+            courseTitle: resolvedCourseTitle,
+            catalogCourseId: isCustom ? null : courseId,
           } 
         });
       } else {
@@ -181,52 +157,17 @@ export function InterviewPage() {
     const userMsg: ChatMessage = { role: 'user', content: userText, timestamp: new Date().toISOString() };
     setMessages(prev => [...prev, userMsg]);
     const newAnswers = [...answers, userText];
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     setAnswers(newAnswers);
     setInput('');
 
     const nextQ = currentQ + 1;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    if (nextQ < questions.length) {
-      const transitions = [
-        '好的，了解了！👍',
-        '明白啦～',
-        '不错不错，这对我很有帮助 😊',
-        '嗯嗯，记下了！',
-        '很好，谢谢你的分享！',
-        '收到 ✅ 继续聊~',
-        'OK，了解你的情况了！',
-        '好嘞，这个信息很重要 📝',
-      ];
-      const transition = transitions[Math.floor(Math.random() * transitions.length)];
-      setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: `${transition}\n\n${questions[nextQ]}`,
-          timestamp: new Date().toISOString(),
-        }]);
-        setCurrentQ(nextQ);
-      }, 1200);
-    } else {
-      setIsTyping(true);
-      setGenerating(true);
-      setTimeout(() => {
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     try {
       if (nextQ < questions.length) {
         setIsTyping(true);
         
         // Use Fetch Reader for transition feedback
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/agent/chat/stream`, {
+        const response = await fetch(`${API_BASE_URL}/api/agent/chat/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -284,10 +225,6 @@ export function InterviewPage() {
         setIsTyping(true);
         setGenerating(true);
 
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         const items = generateCurriculum(courseId!, newAnswers);
         const chapters = generateChapters(courseId!, newAnswers);
         const curriculum: Curriculum = { courseId: courseId!, items, chapters };
@@ -300,25 +237,8 @@ export function InterviewPage() {
         profiles[courseId!] = { courseId: courseId!, answers: newAnswers, summary: '' };
         saveData(STORAGE_KEYS.profiles, profiles);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-        setIsTyping(false);
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: `太好了！我已经根据你的情况为你定制了一份包含 ${chapters.length} 章、${chapters.reduce((s, c) => s + c.sections.length, 0)} 节的学习计划 🎯\n\n学习计划已经准备好了，包括从基础到进阶的完整路径。每个章节都会有我陪你学习，随时解答问题。\n\n点击下方按钮开始你的学习之旅吧！`,
-          timestamp: new Date().toISOString(),
-        }]);
-        setGenerating(false);
-      }, 2500);
-    }
-  };
-
-  const isFinished = currentQ >= questions.length - 1 && answers.length >= questions.length;
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         // Fetch reader for the final summary
-        const response2 = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/agent/chat/stream`, {
+        const response2 = await fetch(`${API_BASE_URL}/api/agent/chat/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -392,28 +312,10 @@ export function InterviewPage() {
   const isFinished = isInterviewFinished || (currentQ >= questions.length - 1 && answers.length >= questions.length);
   const userMessageCount = messages.filter(m => m.role === 'user').length;
   const currentProgress = isFinished ? 100 : Math.min(90, 10 + userMessageCount * 25);
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col h-[calc(100vh-64px)]">
       {/* Progress Bar */}
-<<<<<<< HEAD
-<<<<<<< HEAD
-      <div className="mb-4">
-        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-1.5">
-          <span>{course?.icon} {course?.name} - 个人情况采访</span>
-          <span>{Math.min(answers.length, questions.length)}/{questions.length}</span>
-        </div>
-        <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500"
-            style={{ width: `${(Math.min(answers.length, questions.length) / questions.length) * 100}%` }}
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       <div className="mb-6">
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
           <span className="font-medium">{course?.icon} {course?.name} - 个人情况采访</span>
@@ -423,10 +325,6 @@ export function InterviewPage() {
           <div
             className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-700 ease-out"
             style={{ width: `${currentProgress}%` }}
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
           />
         </div>
       </div>
@@ -449,15 +347,6 @@ export function InterviewPage() {
         <motion.button
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-<<<<<<< HEAD
-<<<<<<< HEAD
-          onClick={() => navigate(`/curriculum/${courseId}`)}
-          className="w-full py-3 bg-gradient-to-r from-violet-500 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-opacity"
-        >
-          🚀 查看我的学习计划
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
           onClick={handleGeneratePlan}
           disabled={isPlanLoading}
           className={`w-full py-3 rounded-xl text-white font-medium transition-all ${
@@ -472,10 +361,6 @@ export function InterviewPage() {
               正在为你疯狂定制中...
             </span>
           ) : '🚀 查看我的学习计划'}
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
         </motion.button>
       ) : (
         <div className="flex gap-2">
@@ -483,31 +368,13 @@ export function InterviewPage() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
-<<<<<<< HEAD
-<<<<<<< HEAD
-            placeholder="输入你的回答..."
-            disabled={generating || isTyping}
-=======
             placeholder={isFinished ? "采访已结束" : "输入你的回答..."}
             disabled={generating || isTyping || isFinished}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-            placeholder={isFinished ? "采访已结束" : "输入你的回答..."}
-            disabled={generating || isTyping || isFinished}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
             className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-violet-300 dark:focus:ring-violet-500/50 disabled:opacity-50 transition-colors"
           />
           <button
             onClick={handleSend}
-<<<<<<< HEAD
-<<<<<<< HEAD
-            disabled={!input.trim() || generating || isTyping}
-=======
             disabled={!input.trim() || generating || isTyping || isFinished}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-            disabled={!input.trim() || generating || isTyping || isFinished}
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
             className="px-4 py-3 bg-violet-500 text-white rounded-xl disabled:opacity-40 hover:bg-violet-600 transition-colors"
           >
             <Send className="w-5 h-5" />

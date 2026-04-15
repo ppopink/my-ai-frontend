@@ -1,14 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import { RootLayout } from "./components/RootLayout";
 import { HomePage } from "./components/HomePage";
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 import { InterviewPage } from "./components/InterviewPage";
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-import { InterviewPage } from "./components/InterviewPage";
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { CurriculumPage } from "./components/CurriculumPage";
 import { LearnPage } from "./components/LearnPage";
 import { NotesPage } from "./components/NotesPage";
@@ -20,14 +13,7 @@ export const router = createBrowserRouter([
     Component: RootLayout,
     children: [
       { index: true, Component: HomePage },
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
       { path: "interview/:courseId", Component: InterviewPage },
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-      { path: "interview/:courseId", Component: InterviewPage },
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       { path: "curriculum/:courseId", Component: CurriculumPage },
       { path: "learn/:courseId/:itemId", Component: LearnPage },
       { path: "notes", Component: NotesPage },
@@ -35,12 +21,4 @@ export const router = createBrowserRouter([
       { path: "profile", Component: ProfilePage },
     ],
   },
-<<<<<<< HEAD
-<<<<<<< HEAD
 ]);
-=======
-]);
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-]);
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d

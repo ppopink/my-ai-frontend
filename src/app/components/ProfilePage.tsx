@@ -11,14 +11,8 @@ import {
   COURSES, STORAGE_KEYS, loadData,
   type Curriculum, type Note,
 } from '../store';
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { useLearningApp } from '../context/LearningAppContext';
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { getCourseDisplay } from '../lib/courseRegistry';
 
 // ── 徽章数据配置 ──
 const ALL_BADGES = [
@@ -63,32 +57,12 @@ function SettingsModal({ open, onClose, title, children }: { open: boolean; onCl
 
 export function ProfilePage() {
   const navigate = useNavigate();
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const { displayName, setDisplayName, resetLearningState } = useLearningApp();
-  const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
-  const notes = loadData<Note[]>(STORAGE_KEYS.notes, []);
-
-  const userName = displayName;
-  const [editing, setEditing] = useState(false);
-  const [tempName, setTempName] = useState(displayName);
-
-  useEffect(() => {
-    setTempName(displayName);
-  }, [displayName]);
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
   const notes = loadData<Note[]>(STORAGE_KEYS.notes, []);
 
   const [userName, setUserName] = useState(() => localStorage.getItem('lp_username') || '学习探索者');
   const [editing, setEditing] = useState(false);
   const [tempName, setTempName] = useState(userName);
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
   // Modal states
   const [openModal, setOpenModal] = useState<'reminder' | 'darkmode' | 'preference' | 'help' | null>(null);
@@ -130,17 +104,8 @@ export function ProfilePage() {
 
   const saveName = () => {
     if (!tempName.trim()) return;
-<<<<<<< HEAD
-<<<<<<< HEAD
-    setDisplayName(tempName.trim());
-=======
     localStorage.setItem('lp_username', tempName.trim());
     setUserName(tempName.trim());
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-    localStorage.setItem('lp_username', tempName.trim());
-    setUserName(tempName.trim());
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     setEditing(false);
   };
 
@@ -170,15 +135,6 @@ export function ProfilePage() {
   if (notes.length >= 5) unlockedBadges.add('notes5');
   if (xp >= 500) unlockedBadges.add('xp500');
   if (completedChapters >= 10) unlockedBadges.add('chapters10');
-
-  const understandingCounts = { beginner: 0, intermediate: 0, advanced: 0 };
-  enrolledCourses.forEach(cid => {
-    curricula[cid]?.items.forEach(item => {
-      if (item.understanding !== 'none') {
-        understandingCounts[item.understanding]++;
-      }
-    });
-  });
 
   // ── Handlers ──
   const saveReminder = () => {
@@ -398,11 +354,10 @@ export function ProfilePage() {
             </h2>
             <div className="space-y-3">
               {enrolledCourses.map((cid, i) => {
-                const course = COURSES.find(c => c.id === cid);
+                const course = getCourseDisplay(cid);
                 const items = curricula[cid]?.items || [];
                 const completed = items.filter(i => i.completed).length;
                 const progress = items.length > 0 ? Math.round(items.reduce((s, i) => s + i.progress, 0) / items.length) : 0;
-                if (!course) return null;
 
                 return (
                   <motion.div
@@ -417,7 +372,7 @@ export function ProfilePage() {
                       {course.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-slate-800 dark:text-white mb-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">{course.name}</div>
+                      <div className="text-sm font-bold text-slate-800 dark:text-white mb-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">{course.title}</div>
                       <div className="flex items-center gap-3">
                         <div className="text-xs font-medium text-slate-400 dark:text-slate-500">{completed}/{items.length} 章完成</div>
                         <div className="flex-1 max-w-[120px] h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
@@ -439,44 +394,6 @@ export function ProfilePage() {
           </div>
         )}
 
-        {/* ── 掌握程度分布 ── */}
-        {(understandingCounts.beginner + understandingCounts.intermediate + understandingCounts.advanced) > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-500" /> 掌握程度分析
-            </h2>
-            <div className="bg-white dark:bg-[#12121a] rounded-2xl border border-slate-200 dark:border-white/10 p-5 shadow-sm">
-              <div className="flex gap-4">
-                {[
-                  { label: '初窥门径', count: understandingCounts.beginner, color: 'bg-orange-400 dark:bg-orange-500' },
-                  { label: '略有小成', count: understandingCounts.intermediate, color: 'bg-amber-400 dark:bg-amber-500' },
-                  { label: '登堂入室', count: understandingCounts.advanced, color: 'bg-emerald-400 dark:bg-emerald-500' },
-                ].map(item => {
-                  const total = understandingCounts.beginner + understandingCounts.intermediate + understandingCounts.advanced;
-                  const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
-                  return (
-                    <div key={item.label} className="flex-1 flex flex-col">
-                      <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">
-                        <span>{item.label}</span>
-                        <span className="bg-slate-100 dark:bg-white/10 px-2 py-0.5 rounded-md">{item.count} 节</span>
-                      </div>
-                      <div className="w-full h-8 bg-slate-100 dark:bg-white/5 rounded-xl overflow-hidden relative border border-slate-200/50 dark:border-white/5">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                          className={`absolute left-0 top-0 bottom-0 ${item.color} transition-all`} 
-                        />
-                      </div>
-                      <div className="text-center text-xs font-bold text-slate-400 dark:text-slate-500 mt-2">{pct}%</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* ── 系统设置菜单 ── */}
         <div className="bg-white dark:bg-[#12121a] rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-sm">
           {[
@@ -491,19 +408,9 @@ export function ProfilePage() {
               onClick={() => {
                 if (item.danger) {
                   if (confirm('确定要清除所有学习数据吗？此操作不可恢复。')) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-                    resetLearningState();
-=======
                     Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
                     Object.keys(localStorage).filter(k => k.startsWith('lp_')).forEach(k => localStorage.removeItem(k));
                     window.location.href = '/';
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
-                    Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
-                    Object.keys(localStorage).filter(k => k.startsWith('lp_')).forEach(k => localStorage.removeItem(k));
-                    window.location.href = '/';
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
                   }
                 } else if (item.modalKey) {
                   setOpenModal(item.modalKey);

@@ -1,18 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
-import { motion } from "motion/react";
-import { ArrowLeft, Clock, FileText, Sparkles } from "lucide-react";
-import { getCourseById } from "../courseCatalog";
-import { useLearningApp } from "../context/LearningAppContext";
-import { learningApi } from "../lib/api";
-import { LEGACY_STORAGE_KEYS, writeStorage } from "../lib/storage";
-import { MarkdownRenderer } from "./MarkdownRenderer";
-import type { NoteListItem } from "../types/learning";
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { motion } from 'motion/react';
@@ -23,6 +8,8 @@ import {
   COURSES, STORAGE_KEYS, loadData, saveData, generateReviewNote,
   type Note, type Curriculum,
 } from '../store';
+import { API_BASE_URL } from '../lib/api';
+import { getCourseDisplay } from '../lib/courseRegistry';
 
 // 🚨 1. 初始化 Mermaid 的主题样式（我们给它配上了你项目专属的紫色主题！）
 mermaid.initialize({
@@ -102,152 +89,14 @@ function MermaidChart({ code }: { code: string }) {
     />
   );
 }
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
 export function NotesPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
-<<<<<<< HEAD
-<<<<<<< HEAD
-  const {
-    userId,
-    activeCourseId,
-    coursePlans,
-    currentPositions,
-    getTutorMessages,
-    setActiveCourseId,
-  } = useLearningApp();
-  const [notes, setNotes] = useState<NoteListItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState(courseId || activeCourseId || "");
-  const [selectedNote, setSelectedNote] = useState<NoteListItem | null>(null);
-  const [focusQuestion, setFocusQuestion] = useState("");
-  const [takeaways, setTakeaways] = useState("");
-  const [additionalContext, setAdditionalContext] = useState("");
-  const [generating, setGenerating] = useState(false);
-
-  useEffect(() => {
-    if (courseId) {
-      setSelectedCourse(courseId);
-      setActiveCourseId(courseId);
-    }
-  }, [courseId, setActiveCourseId]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadNotes() {
-      setLoading(true);
-      setError("");
-
-      try {
-        const result = await learningApi.getNotesList(userId);
-        if (!active) return;
-
-        const nextNotes = result.data || [];
-        setNotes(nextNotes);
-        writeStorage(LEGACY_STORAGE_KEYS.notes, nextNotes);
-      } catch (loadError) {
-        if (active) {
-          setError(loadError instanceof Error ? loadError.message : "笔记列表加载失败");
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void loadNotes();
-
-    return () => {
-      active = false;
-    };
-  }, [userId]);
-
-  const currentCourseId = courseId || selectedCourse || activeCourseId || Object.keys(coursePlans)[0] || "";
-  const currentCourse = getCourseById(currentCourseId);
-  const currentPlan = currentCourseId ? coursePlans[currentCourseId] : undefined;
-  const currentPosition = currentCourseId ? currentPositions[currentCourseId] : undefined;
-
-  const currentContext = useMemo(() => {
-    if (!currentPlan) return null;
-
-    const currentChapter =
-      currentPlan.chapters.find((chapter) => chapter.id === currentPosition?.chapterId) || currentPlan.chapters[0];
-    const currentSection =
-      currentChapter?.sections.find((section) => section.id === currentPosition?.sectionId) || currentChapter?.sections[0];
-
-    return {
-      chapter: currentChapter,
-      section: currentSection,
-    };
-  }, [currentPlan, currentPosition?.chapterId, currentPosition?.sectionId]);
-
-  const filteredNotes = notes.filter((note) => {
-    if (courseId) return note.course_id === courseId;
-    if (!selectedCourse) return true;
-    return note.course_id === selectedCourse;
-  });
-
-  const recentMessages = currentCourseId && currentContext?.section
-    ? getTutorMessages(currentCourseId, currentContext.section.id).slice(-8)
-    : [];
-
-  const generateCurrentSectionNote = async () => {
-    if (!currentCourseId || !currentContext?.chapter || !currentContext?.section) {
-      setError("当前没有足够的小节上下文，请先进入课程学习页再生成笔记。");
-      return;
-    }
-
-    setGenerating(true);
-    setError("");
-
-    try {
-      const result = await learningApi.generateNote({
-        user_id: userId,
-        course_id: currentCourseId,
-        chapter_id: currentContext.chapter.id,
-        chapter_title: currentContext.chapter.title,
-        section_id: currentContext.section.id,
-        section_title: currentContext.section.title,
-        note_title: null,
-        focus_questions: focusQuestion.trim() ? [focusQuestion.trim()] : [],
-        messages: recentMessages.map(({ role, content }) => ({ role, content })),
-        user_takeaways: takeaways.trim(),
-        additional_context: additionalContext.trim(),
-        auto_save: true,
-        include_mindmap: true,
-      });
-
-      const note: NoteListItem = {
-        id: result.data?.saved_note_id || `temp-${Date.now()}`,
-        course_id: currentCourseId,
-        title: result.data?.title || `${currentCourse?.name || currentCourseId} 学习笔记`,
-        content: result.data?.content || "",
-        created_at: new Date().toLocaleString("zh-CN"),
-      };
-
-      const nextNotes = [note, ...notes];
-      setNotes(nextNotes);
-      setSelectedNote(note);
-      writeStorage(LEGACY_STORAGE_KEYS.notes, nextNotes);
-      setTakeaways("");
-      setAdditionalContext("");
-      setFocusQuestion("");
-    } catch (generateError) {
-      setError(generateError instanceof Error ? generateError.message : "笔记生成失败");
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
   // If courseId is present, this is a course-scoped notes view (locked to that course)
   const isCourseLocked = !!courseId;
-  const lockedCourse = COURSES.find(c => c.id === courseId);
+  const lockedCourse = getCourseDisplay(courseId);
 
   const [notes, setNotes] = useState<Note[]>(() => loadData<Note[]>(STORAGE_KEYS.notes, []));
   const [generating, setGenerating] = useState(false);
@@ -262,7 +111,10 @@ export function NotesPage() {
   const [isMindmapping, setIsMindmapping] = useState(false); // 🚨 新增：是否正在生成思维导图
 
   const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
-  const enrolledCourses = COURSES.filter(c => curricula[c.id]);
+  const enrolledCourses = Object.keys(curricula).map((cid) => ({
+    id: cid,
+    ...getCourseDisplay(cid),
+  }));
 
   // Filter logic: course-locked always filters by courseId; global view uses selectedCourse
   const filteredNotes = isCourseLocked
@@ -312,7 +164,7 @@ export function NotesPage() {
       const weakPoints = weakItems.map(i => i.title).join("、") || "暂无明显薄弱点";
 
       // 2. 呼叫后端真正的“教研组长” API
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/notes/generate`, {
+      const response = await fetch(`${API_BASE_URL}/api/notes/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -342,209 +194,17 @@ export function NotesPage() {
     } catch (error) {
       console.error("生成笔记出错:", error);
       alert("生成失败，请检查后端服务是否正常连接！");
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     } finally {
       setGenerating(false);
     }
   };
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  if (selectedNote) {
-    const noteCourse = getCourseById(selectedNote.course_id);
-
-    return (
-      <div className="flex h-[calc(100vh-64px)] flex-col bg-white">
-        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setSelectedNote(null)}
-              className="rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-            >
-              返回列表
-            </button>
-            <div>
-              <h1 className="text-lg font-bold text-slate-900">{selectedNote.title}</h1>
-              <p className="mt-1 text-xs text-slate-400">
-                {noteCourse?.icon} {noteCourse?.name} · {selectedNote.created_at}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto px-6 py-8">
-          <div className="mx-auto max-w-4xl">
-            <MarkdownRenderer content={selectedNote.content} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          {courseId ? (
-            <button onClick={() => navigate(`/curriculum/${courseId}`)} className="rounded-xl p-2 transition hover:bg-slate-100">
-              <ArrowLeft className="h-5 w-5 text-slate-500" />
-            </button>
-          ) : null}
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{courseId ? `${currentCourse?.name} 笔记区` : "学习笔记"}</h1>
-            <p className="mt-1 text-sm text-slate-500">Agent 5 会结合当前小节、最近问答和你的 takeaway 生成可回顾笔记。</p>
-          </div>
-        </div>
-      </div>
-
-      {!courseId ? (
-        <div className="mb-5 flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedCourse("")}
-            className={`rounded-full px-3 py-1.5 text-sm transition ${
-              !selectedCourse ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-            }`}
-          >
-            全部课程
-          </button>
-          {Object.keys(coursePlans).map((id) => {
-            const course = getCourseById(id);
-            return (
-              <button
-                key={id}
-                onClick={() => setSelectedCourse(id)}
-                className={`rounded-full px-3 py-1.5 text-sm transition ${
-                  selectedCourse === id ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                }`}
-              >
-                {course?.icon} {course?.name || id}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-
-      <div className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-500">Agent 5 笔记整理员</p>
-            <h2 className="mt-2 text-xl font-bold text-slate-900">生成本节笔记</h2>
-          </div>
-
-          <div className="mb-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-            <p className="font-semibold text-slate-800">当前上下文</p>
-            <p className="mt-2">课程：{currentCourse?.name || "未选择课程"}</p>
-            <p className="mt-1">章节：{currentContext?.chapter?.title || "未定位到章节"}</p>
-            <p className="mt-1">小节：{currentContext?.section?.title || "未定位到小节"}</p>
-            <p className="mt-2 text-xs text-slate-400">最近会附带 {recentMessages.length} 条导师问答上下文。</p>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">当前最关心的问题</label>
-              <input
-                value={focusQuestion}
-                onChange={(event) => setFocusQuestion(event.target.value)}
-                placeholder="例如：我总是分不清这个概念和上节课的区别"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:bg-white"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">我的 takeaway</label>
-              <textarea
-                value={takeaways}
-                onChange={(event) => setTakeaways(event.target.value)}
-                rows={4}
-                placeholder="写下你这节真正学会了什么，Agent 5 会把它吸收进笔记里。"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:bg-white"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">补充上下文</label>
-              <textarea
-                value={additionalContext}
-                onChange={(event) => setAdditionalContext(event.target.value)}
-                rows={3}
-                placeholder="例如：我想把它整理成适合面试前回顾的版本。"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-violet-400 focus:bg-white"
-              />
-            </div>
-            <button
-              onClick={() => void generateCurrentSectionNote()}
-              disabled={generating || !currentCourseId || !currentContext?.section}
-              className="flex items-center gap-2 rounded-2xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Sparkles className="h-4 w-4" />
-              {generating ? "正在生成..." : "生成本节笔记"}
-            </button>
-          </div>
-        </section>
-
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-bold text-slate-900">最近生成的笔记</h2>
-          {loading ? (
-            <div className="flex h-full min-h-[240px] items-center justify-center text-slate-500">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
-            </div>
-          ) : filteredNotes.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
-              <FileText className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-              <p>还没有笔记记录。</p>
-              <p className="mt-2">生成一篇后，它会自动保存到后端并出现在这里。</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredNotes.map((note, index) => {
-                const noteCourse = getCourseById(note.course_id);
-                return (
-                  <motion.button
-                    key={`${note.id}-${index}`}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                    onClick={() => setSelectedNote(note)}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-violet-200 hover:bg-white hover:shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-800">{note.title}</p>
-                        <p className="mt-1 text-xs text-slate-400">
-                          {noteCourse?.icon} {noteCourse?.name || note.course_id}
-                        </p>
-                      </div>
-                      <span className="flex shrink-0 items-center gap-1 text-xs text-slate-400">
-                        <Clock className="h-3.5 w-3.5" />
-                        {note.created_at}
-                      </span>
-                    </div>
-                    <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-slate-500">
-                      {note.content}
-                    </p>
-                  </motion.button>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      </div>
-
-      {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-600">
-          <p className="font-semibold">笔记请求失败</p>
-          <p className="mt-1">{error}</p>
-        </div>
-      ) : null}
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   const handleGenerateMindmap = async () => {
     if (!editContent.trim() || isMindmapping) return;
     
     setIsMindmapping(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/notes/extract-mindmap`, {
+      const response = await fetch(`${API_BASE_URL}/api/notes/extract-mindmap`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: editContent })
@@ -787,7 +447,7 @@ export function NotesPage() {
             </button>
           ) : null}
           <div>
-            <h1>{isCourseLocked ? `${lockedCourse?.icon} ${lockedCourse?.name} 笔记` : '学习笔记'}</h1>
+            <h1>{isCourseLocked ? `${lockedCourse.icon} ${lockedCourse.title} 笔记` : '学习笔记'}</h1>
             {isCourseLocked && (
               <p className="text-xs text-gray-400 mt-0.5">仅显示该课程的笔记</p>
             )}
@@ -826,7 +486,7 @@ export function NotesPage() {
               onClick={() => setSelectedCourse(c.id)}
               className={`px-3 py-1.5 text-sm rounded-full transition-colors ${selectedCourse === c.id ? 'bg-violet-100 text-violet-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
             >
-              {c.icon} {c.name}
+              {c.icon} {c.title}
             </button>
           ))}
         </div>
@@ -839,7 +499,7 @@ export function NotesPage() {
           <p>还没有笔记</p>
           <p className="text-sm mt-1">
             {isCourseLocked
-              ? `为「${lockedCourse?.name}」创建笔记或让 AI 自动生成复盘笔记`
+              ? `为「${lockedCourse.title}」创建笔记或让 AI 自动生成复盘笔记`
               : '创建新笔记或让 AI 自动生成复盘笔记'
             }
           </p>
@@ -847,7 +507,7 @@ export function NotesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredNotes.map((note, i) => {
-            const course = COURSES.find(c => c.id === note.courseId);
+            const course = getCourseDisplay(note.courseId);
 
             return (
               <motion.div
@@ -864,7 +524,7 @@ export function NotesPage() {
                       {/* Only show course badge in global view, since course-locked view already shows it in the title */}
                       {!isCourseLocked && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                          {course?.icon} {course?.name}
+                          {course.icon} {course.title}
                         </span>
                       )}
                       {note.isAIGenerated && (
@@ -898,10 +558,6 @@ export function NotesPage() {
           })}
         </div>
       )}
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     </div>
   );
 }

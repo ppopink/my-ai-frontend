@@ -1,142 +1,56 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
-import { motion } from "motion/react";
-import {
-  ArrowLeft,
-  BookOpen,
-  ChevronDown,
-  ChevronRight,
-  Circle,
-  Play,
-  StickyNote,
-  Target,
-} from "lucide-react";
-import { getCourseById } from "../courseCatalog";
-import { learningApi } from "../lib/api";
-import { useLearningApp } from "../context/LearningAppContext";
-
-export function CurriculumPage() {
-  const { courseId } = useParams<{ courseId: string }>();
-  const navigate = useNavigate();
-  const {
-    userId,
-    coursePlans,
-    progressSnapshots,
-    saveCoursePlan,
-    saveProgressSnapshot,
-    setActiveCourseId,
-    saveCurrentPosition,
-  } = useLearningApp();
-  const course = getCourseById(courseId);
-  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const plan = courseId ? coursePlans[courseId] : undefined;
-  const progress = courseId ? progressSnapshots[courseId]?.progress : undefined;
-
-  useEffect(() => {
-    if (!courseId) return;
-
-    setActiveCourseId(courseId);
-    let active = true;
-
-    async function hydrate() {
-      setLoading(true);
-      setError("");
-
-      try {
-        if (!plan) {
-          const curriculum = await learningApi.getCoursePlan(userId, courseId);
-          if (active && curriculum.data) {
-            saveCoursePlan(courseId, curriculum.data);
-          }
-        }
-
-        try {
-          const progressResult = await learningApi.getProgress(userId, courseId);
-          if (active && progressResult.data) {
-            saveProgressSnapshot(courseId, progressResult.data);
-          }
-        } catch (progressError) {
-          if (progressError instanceof Error && !progressError.message.includes("未找到该课程的学习进度")) {
-            console.error(progressError);
-          }
-        }
-      } catch (loadError) {
-        if (active) {
-          setError(loadError instanceof Error ? loadError.message : "课程蓝图加载失败");
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    void hydrate();
-
-    return () => {
-      active = false;
-    };
-  }, [courseId, plan, saveCoursePlan, saveProgressSnapshot, setActiveCourseId, userId]);
-
-  useEffect(() => {
-    if (!plan?.chapters.length) return;
-    setExpandedChapters(new Set([plan.chapters[0].id]));
-  }, [plan?.chapters]);
-
-  const completedSections = useMemo(
-    () => new Set(progress?.completed_section_ids || []),
-    [progress?.completed_section_ids],
-  );
-  const currentSectionId = progress?.current_section_id || null;
-  const currentChapterId = progress?.current_chapter_id || null;
-  const totalSections = progress?.section_total ?? plan?.chapters.reduce((sum, chapter) => sum + chapter.sections.length, 0) ?? 0;
-  const completedCount = progress?.completed_section_count ?? completedSections.size;
-  const progressPercent = Math.round(progress?.section_progress_percent ?? 0);
-
-  const continueSection = currentSectionId || plan?.chapters[0]?.sections[0]?.id;
-
-  const openSection = (chapterId: string, chapterTitle: string, sectionId: string, sectionTitle: string) => {
-    if (!courseId) return;
-    saveCurrentPosition(courseId, {
-      chapterId,
-      chapterTitle,
-      sectionId,
-      sectionTitle,
-    });
-    navigate(`/learn/${courseId}/${sectionId}`);
-  };
-
-  if (!courseId) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-16 text-center text-slate-500">
-        <p>课程不存在。</p>
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, Circle, Play, Lock, ArrowLeft, StickyNote, ChevronDown, BookOpen } from 'lucide-react';
 import { COURSES, STORAGE_KEYS, loadData, type Curriculum, type CurriculumChapter, type CurriculumSection } from '../store';
+import { API_BASE_URL } from '../lib/api';
+import {
+  buildCurriculumFromSyllabus,
+  getCourseDisplay,
+  persistCurriculumFromSyllabus,
+  registerCourseRecord,
+  resolveCourseId,
+} from '../lib/courseRegistry';
 
 export function CurriculumPage() {
-  const { courseId } = useParams<{ courseId: string }>();
+  const { courseId: routeCourseId } = useParams<{ courseId: string }>();
   const location = useLocation();
-  const { syllabusData, isCustom: isCustomFromState, courseTitle: courseTitleFromState } = (location.state as any) || {};
+  const { syllabusData, isCustom: isCustomFromState, courseTitle: courseTitleFromState, actualCourseId: actualCourseIdFromState } = (location.state as any) || {};
   const navigate = useNavigate();
+  const actualCourseId = resolveCourseId(actualCourseIdFromState || routeCourseId) || routeCourseId || '';
+  const courseDisplay = getCourseDisplay(actualCourseId);
 
-  const course = isCustomFromState 
-    ? { id: 'custom', name: courseTitleFromState || '自定义课程', icon: '✨', color: '#8b5cf6' }
-    : COURSES.find(c => c.id === courseId);
+  const course =
+    isCustomFromState || courseDisplay.isCustom
+      ? {
+          id: actualCourseId,
+          name: courseTitleFromState || courseDisplay.title || '自定义课程',
+          icon: courseDisplay.icon || '✨',
+          color: courseDisplay.color || '#8b5cf6',
+        }
+      : COURSES.find((item) => item.id === courseDisplay.catalogCourseId) || {
+          id: actualCourseId,
+          name: courseDisplay.title,
+          icon: courseDisplay.icon,
+          color: courseDisplay.color,
+        };
 
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
   const [customSyllabus, setCustomSyllabus] = useState<any>(syllabusData || null);
   const [isLoading, setIsLoading] = useState(!syllabusData);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!actualCourseId) return;
+    registerCourseRecord({
+      actualCourseId,
+      catalogCourseId: courseDisplay.isCustom ? undefined : courseDisplay.catalogCourseId,
+      title: courseTitleFromState || courseDisplay.title,
+      icon: courseDisplay.icon,
+      color: courseDisplay.color,
+      isCustom: Boolean(isCustomFromState || courseDisplay.isCustom),
+    });
+  }, [actualCourseId, courseDisplay.catalogCourseId, courseDisplay.color, courseDisplay.icon, courseDisplay.isCustom, courseDisplay.title, courseTitleFromState, isCustomFromState]);
 
   // 1. 数据拉取 Hook
   useEffect(() => {
@@ -147,54 +61,55 @@ export function CurriculumPage() {
 
     const fetchSyllabus = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/onboarding/curriculum/${courseId}?user_id=user_123`);
+        setLoadError(null);
+        const response = await fetch(`${API_BASE_URL}/api/curriculum/user_123/${actualCourseId}`);
+        if (response.status === 404) {
+          setLoadError('当前课程大纲未找到，请确认使用的是生成大纲后返回的真实 course_id。');
+          return;
+        }
         if (response.ok) {
           const result = await response.json();
           if (result.status === 'success') {
             setCustomSyllabus(result.data);
+          } else {
+            setLoadError(result.message || '课程大纲加载失败');
           }
+        } else {
+          setLoadError('课程大纲加载失败，请稍后再试');
         }
       } catch (error) {
         console.error("获取专属大纲失败:", error);
+        setLoadError('课程大纲加载失败，请检查后端服务是否正常运行。');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchSyllabus();
-  }, [courseId, customSyllabus]);
+    if (actualCourseId) {
+      fetchSyllabus();
+    } else {
+      setIsLoading(false);
+      setLoadError('缺少课程标识，无法加载课程大纲。');
+    }
+  }, [actualCourseId, customSyllabus]);
+
+  useEffect(() => {
+    if (!customSyllabus || !actualCourseId) {
+      return;
+    }
+
+    persistCurriculumFromSyllabus({
+      actualCourseId,
+      previousCourseId: routeCourseId !== actualCourseId ? routeCourseId : undefined,
+      syllabusData: customSyllabus,
+    });
+  }, [actualCourseId, customSyllabus, routeCourseId]);
 
   // 2. 基础数据与合并逻辑 (非 Hook)
   const curricula = loadData<Record<string, Curriculum>>(STORAGE_KEYS.curricula, {});
-  let curriculum = curricula[courseId!];
+  let curriculum = curricula[actualCourseId];
 
   if (customSyllabus) {
-    const rawChapters = Array.isArray(customSyllabus) 
-      ? customSyllabus 
-      : (customSyllabus?.chapters || []);
-
-    const mappedChapters: CurriculumChapter[] = rawChapters.map((ch: any, chIdx: number) => ({
-      id: `custom-ch-${chIdx}`,
-      title: ch.chapter_title || ch.title || "未知章节",
-      description: ch.description || "AI 为你量身定制的章节",
-      sections: (ch.sections || []).map((sec: any, secIdx: number) => {
-        const secTitle = typeof sec === 'string' ? sec : (sec.title || "未知节");
-        return {
-          id: `custom-sec-${chIdx}-${secIdx}`,
-          title: secTitle,
-          description: typeof sec === 'object' ? (sec.description || "") : "",
-          progress: 0,
-          completed: false,
-          understanding: 'none',
-          content: ''
-        };
-      })
-    }));
-
-    if (!curriculum) {
-      curriculum = { courseId: courseId!, chapters: mappedChapters } as Curriculum;
-    } else {
-      curriculum = { ...curriculum, chapters: mappedChapters };
-    }
+    curriculum = buildCurriculumFromSyllabus(actualCourseId, customSyllabus, curricula[actualCourseId]);
   }
 
   const chapters = curriculum?.chapters || [];
@@ -267,173 +182,29 @@ export function CurriculumPage() {
       <div className="max-w-2xl mx-auto px-4 py-32 text-center">
         <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
         <p className="text-gray-500 animate-pulse">正在从云端获取你的专属学习计划...</p>
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
       </div>
     );
   }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  if (loading && !plan) {
-    return (
-      <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center text-slate-500">
-        <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-violet-200 border-t-violet-600" />
-        <p className="font-medium">正在从后端加载课程蓝图...</p>
-      </div>
-    );
-  }
-
-  if (!plan) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <p className="mb-3 text-lg font-semibold text-slate-800">还没有生成这门课程的蓝图</p>
-        <p className="mb-6 text-sm text-slate-500">{error || "请先回到首页完成访谈，再生成课程蓝图。"}</p>
-        <button
-          onClick={() => navigate("/")}
-          className="rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-500"
-        >
-          返回首页开始
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
   if (!curriculum || chapters.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <p className="text-gray-500 mb-4">你还没有开始这门课程</p>
-        <button onClick={() => navigate(`/interview/${courseId}`)} className="px-6 py-2 bg-violet-500 text-white rounded-lg">
-          开始采访
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
+        <p className="text-gray-500 mb-4">{loadError || '你还没有开始这门课程'}</p>
+        <button
+          onClick={() =>
+            navigate(`/interview/${courseDisplay.catalogCourseId || 'custom'}`, {
+              state: courseDisplay.isCustom ? { isCustom: true, courseTitle: course.name } : undefined,
+            })
+          }
+          className="px-6 py-2 bg-violet-500 text-white rounded-lg"
+        >
+          重新生成学习计划
         </button>
       </div>
     );
   }
 
   return (
-<<<<<<< HEAD
-<<<<<<< HEAD
-    <div className="mx-auto max-w-6xl px-4 py-6 pb-24">
-      <div className="mb-6 flex items-center gap-3">
-        <button onClick={() => navigate("/")} className="rounded-xl p-2 transition hover:bg-slate-100">
-          <ArrowLeft className="h-5 w-5 text-slate-500" />
-        </button>
-        <div className="flex-1">
-          <h1 className="flex items-center gap-2 text-xl font-bold text-slate-900">
-            <span>{course?.icon}</span>
-            <span>{plan.title || course?.name}</span>
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">{plan.description || course?.description}</p>
-        </div>
-        <button
-          onClick={() => navigate(`/notes/${courseId}`)}
-          className="flex items-center gap-2 rounded-xl bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-100"
-        >
-          <StickyNote className="h-4 w-4" />
-          笔记区
-        </button>
-      </div>
-
-      <div className="mb-6 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-500">Agent 2 课程架构师</p>
-              <h2 className="mt-2 text-2xl font-bold text-slate-900">课程概览</h2>
-            </div>
-            {continueSection ? (
-              <button
-                onClick={() =>
-                  openSection(
-                    progress?.current_chapter_id || plan.chapters[0]?.id,
-                    progress?.current_chapter_title || plan.chapters[0]?.title || "",
-                    continueSection,
-                    progress?.current_section_title ||
-                      plan.chapters.flatMap((chapter) => chapter.sections).find((section) => section.id === continueSection)?.title ||
-                      "",
-                  )
-                }
-                className="rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-500"
-              >
-                {currentSectionId ? "继续学习" : "开始学习"}
-              </button>
-            ) : null}
-          </div>
-
-          <div className="mb-5 rounded-2xl bg-slate-50 p-4">
-            <div className="mb-2 flex items-center justify-between text-sm text-slate-500">
-              <span>
-                已完成 {completedCount}/{totalSections} 个小节
-              </span>
-              <span className="font-semibold text-violet-600">{progressPercent}%</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-              <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" style={{ width: `${progressPercent}%` }} />
-            </div>
-          </div>
-
-          {plan.course_objectives.length > 0 ? (
-            <div className="mb-5">
-              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
-                <Target className="h-4 w-4 text-violet-500" />
-                学习目标
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {plan.course_objectives.map((objective) => (
-                  <span
-                    key={objective}
-                    className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600"
-                  >
-                    {objective}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {plan.recommended_start_point ? (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-              <span className="font-semibold">推荐起点：</span>
-              {plan.recommended_start_point}
-            </div>
-          ) : null}
-        </section>
-
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
-            <BookOpen className="h-5 w-5 text-violet-500" />
-            学习定位
-          </h2>
-          <div className="space-y-3 text-sm text-slate-600">
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">当前章节</p>
-              <p className="mt-2 font-medium text-slate-800">{progress?.current_chapter_title || "尚未开始"}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">当前小节</p>
-              <p className="mt-2 font-medium text-slate-800">{progress?.current_section_title || "从第一节开始最稳妥"}</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">最近活动</p>
-              <p className="mt-2 font-medium text-slate-800">{progress?.last_activity_at || "暂无上报记录"}</p>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div className="space-y-4">
-        {plan.chapters.map((chapter, chapterIndex) => {
-          const expanded = expandedChapters.has(chapter.id);
-          const sectionTotal = chapter.sections.length;
-          const chapterCompleted = chapter.sections.filter((section) => completedSections.has(section.id)).length;
-          const isCurrentChapter = currentChapterId === chapter.id;
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     <div className="max-w-3xl mx-auto px-4 py-6 pb-24">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
@@ -452,7 +223,7 @@ export function CurriculumPage() {
           </div>
         </div>
         <button
-          onClick={() => navigate(`/notes/${courseId}`)}
+          onClick={() => navigate(`/notes/${actualCourseId}`)}
           className="flex items-center gap-1.5 px-3 py-2 text-sm text-violet-600 bg-violet-50 rounded-lg hover:bg-violet-100 transition-colors"
         >
           <StickyNote className="w-4 h-4" /> 笔记
@@ -485,128 +256,12 @@ export function CurriculumPage() {
           const chProgress = getChapterProgress(chapter);
           const chStatus = getChapterStatus(chapter);
           const completedInCh = chapter.sections.filter(s => s.completed).length;
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
 
           return (
             <motion.div
               key={chapter.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-<<<<<<< HEAD
-<<<<<<< HEAD
-              transition={{ delay: chapterIndex * 0.05 }}
-              className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm"
-            >
-              <button
-                onClick={() =>
-                  setExpandedChapters((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(chapter.id)) {
-                      next.delete(chapter.id);
-                    } else {
-                      next.add(chapter.id);
-                    }
-                    return next;
-                  })
-                }
-                className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
-              >
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-2xl ${
-                    isCurrentChapter ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {chapterCompleted === sectionTotal && sectionTotal > 0 ? (
-                    <BookOpen className="h-5 w-5" />
-                  ) : (
-                    <Circle className="h-4 w-4" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="truncate text-base font-semibold text-slate-900">{chapter.title}</h3>
-                    {isCurrentChapter ? (
-                      <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
-                        当前章节
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-1 truncate text-sm text-slate-500">{chapter.description || "课程架构师为你安排的小节路径"}</p>
-                  <p className="mt-2 text-xs text-slate-400">
-                    {chapterCompleted}/{sectionTotal} 小节完成
-                  </p>
-                </div>
-                <ChevronDown
-                  className={`h-5 w-5 shrink-0 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {expanded ? (
-                <div className="border-t border-slate-100 bg-slate-50/80 p-4">
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    {chapter.learning_goals.map((goal) => (
-                      <span key={goal} className="rounded-full bg-white px-3 py-1 text-xs text-slate-500 shadow-sm">
-                        {goal}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="space-y-3">
-                    {chapter.sections.map((section) => {
-                      const completed = completedSections.has(section.id);
-                      const active = currentSectionId === section.id;
-
-                      return (
-                        <button
-                          key={section.id}
-                          onClick={() => openSection(chapter.id, chapter.title, section.id, section.title)}
-                          className={`group flex w-full items-start gap-4 rounded-2xl border px-4 py-4 text-left transition ${
-                            active
-                              ? "border-violet-200 bg-violet-50"
-                              : "border-transparent bg-white hover:border-slate-200 hover:bg-white"
-                          }`}
-                        >
-                          <div
-                            className={`mt-1 flex h-9 w-9 items-center justify-center rounded-full ${
-                              completed
-                                ? "bg-emerald-100 text-emerald-600"
-                                : active
-                                ? "bg-violet-100 text-violet-600"
-                                : "bg-slate-100 text-slate-400"
-                            }`}
-                          >
-                            {completed ? <BookOpen className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="truncate text-sm font-semibold text-slate-800">{section.title}</p>
-                              {active ? (
-                                <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
-                                  当前
-                                </span>
-                              ) : null}
-                            </div>
-                            <p className="mt-1 line-clamp-2 text-sm text-slate-500">{section.objective || "进入学习页查看本节目标与题目。"}</p>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {section.key_points.slice(0, 4).map((point) => (
-                                <span key={point} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-500">
-                                  {point}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-slate-300 transition group-hover:text-violet-500" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-=======
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
               transition={{ delay: chIdx * 0.04 }}
               className="rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm"
             >
@@ -691,7 +346,7 @@ export function CurriculumPage() {
                         return (
                           <div
                             key={section.id}
-                            onClick={() => accessible && navigate(`/learn/${courseId}/${section.id}`)}
+                            onClick={() => accessible && navigate(`/learn/${actualCourseId}/${section.id}`)}
                             className={`flex items-center gap-3 px-4 py-3 ml-6 mr-2 border-l-2 transition-all ${
                               sIdx < chapter.sections.length - 1 ? '' : ''
                             } ${
@@ -741,27 +396,10 @@ export function CurriculumPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
-<<<<<<< HEAD
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
             </motion.div>
           );
         })}
       </div>
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-      {error ? (
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-          <p className="font-semibold">提示</p>
-          <p className="mt-1">{error}</p>
-        </div>
-      ) : null}
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
-=======
->>>>>>> 979741d0fc745d1b505487f1df77b1730059d01d
     </div>
   );
 }
